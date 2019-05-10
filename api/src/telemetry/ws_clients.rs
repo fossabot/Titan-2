@@ -1,12 +1,11 @@
 use super::{append_log, sleep, IncludesTimestamp};
 use crate::websocket::CONNECTED_CLIENTS;
 use std::sync::atomic::Ordering;
-use tokio::await;
 
 #[inline]
 pub async fn log_ws_clients() {
     loop {
-        await!(sleep(10));
+        sleep(10).await;
 
         append_log(
             IncludesTimestamp(false),

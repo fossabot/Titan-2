@@ -1,6 +1,5 @@
 #![feature(
     async_await,
-    await_macro,
     custom_attribute,
     decl_macro,
     proc_macro_hygiene

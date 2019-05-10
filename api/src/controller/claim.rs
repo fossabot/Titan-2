@@ -45,8 +45,10 @@ impl Claim {
     /// Obtain the `user_id` field of a JWT passed as a parameter.
     #[inline]
     pub fn get_user_id(token: &str) -> Result<i32, jsonwebtoken::errors::Error> {
-        Ok(jwt::decode::<Claim>(token, &ROCKET_SECRET_KEY, &VALIDATION)?
-            .claims
-            .user_id)
+        Ok(
+            jwt::decode::<Claim>(token, &ROCKET_SECRET_KEY, &VALIDATION)?
+                .claims
+                .user_id,
+        )
     }
 }

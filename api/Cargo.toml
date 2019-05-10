@@ -13,11 +13,13 @@ telemetry = ["chrono", "tokio", "rocket_telemetry"]
 
 [dependencies]
 chrono = { version = "0.4.6", optional = true }
+clap = "2.33.0"
 derive_more = "0.14.0"
 diesel = { version = "1.4.1", features = ["serde_json"] }
 dotenv = "0.13.0"
 dotenv_codegen = "0.11.0"
 enceladus_macros = { path = "../macros" }
+futures-preview = { version = "0.3.0-alpha.15", features = ["io-compat"] }
 hashbrown = "0.1.8"
 itertools = "0.8.0"
 jsonwebtoken = "5.0.1"
@@ -34,9 +36,6 @@ serde = { version = "1.0.87", features = ["derive"] }
 serde_json = "1.0.38"
 tokio = { version = "0.1.18", features = ["async-await-preview"], optional = true }
 uuid = { version = "0.7.2", features = ["v4"] }
-
-# FIXME Switch back to using regular versions once housleyjk/ws-rs#257 is merged.
-# ws = "0.8.0"
 ws = { git = 'https://github.com/jhpratt/ws-rs' }
 
 [dependencies.rocket_contrib]

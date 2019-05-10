@@ -4,13 +4,14 @@ mod ws_message;
 
 pub use self::{requests::*, ws_clients::*, ws_message::*};
 use chrono::prelude::*;
+use futures::compat::Compat01As03 as Compat;
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use std::{
     ops::Deref,
     time::{Duration, Instant},
 };
-use tokio::{await, fs::file::File, prelude::*, timer::Delay};
+use tokio::{fs::file::File, prelude::*, timer::Delay};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy)]
@@ -40,7 +41,10 @@ lazy_static! {
 /// Resolve the future after the provided number of seconds.
 #[inline]
 async fn sleep(seconds: u64) {
-    await!(Delay::new(Instant::now() + Duration::from_secs(seconds)))
+    // For now, we need to wrap the tokio Delay in a compatibility layer.
+    // Eventually, tokio will natively support futures 0.3, and we can remove this.
+    Compat::new(Delay::new(Instant::now() + Duration::from_secs(seconds)))
+        .await
         .expect("Error in tokio timer");
 }
 
