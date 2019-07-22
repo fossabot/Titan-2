@@ -16,6 +16,7 @@ use rocket::{
     Response,
 };
 use std::io::Cursor;
+use lazy_static::lazy_static;
 
 pub type RequestLog = Vec<RequestLogEntry>;
 pub static REQUESTS: RwLock<RequestLog> = RwLock::new(Vec::new());

@@ -4,7 +4,10 @@ mod ws_message;
 
 pub use self::{requests::*, ws_clients::*, ws_message::*};
 use chrono::prelude::*;
-use futures::compat::Compat01As03 as Compat;
+use futures::{
+    compat::Future01CompatExt,
+    future::{FutureExt, TryFutureExt},
+};
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
 use std::{
@@ -19,6 +22,7 @@ struct IncludesTimestamp(bool);
 impl Deref for IncludesTimestamp {
     type Target = bool;
 
+    #[inline(always)]
     fn deref(&self) -> &Self::Target {
         &self.0
     }
@@ -41,9 +45,8 @@ lazy_static! {
 /// Resolve the future after the provided number of seconds.
 #[inline]
 async fn sleep(seconds: u64) {
-    // For now, we need to wrap the tokio Delay in a compatibility layer.
-    // Eventually, tokio will natively support futures 0.3, and we can remove this.
-    Compat::new(Delay::new(Instant::now() + Duration::from_secs(seconds)))
+    Delay::new(Instant::now() + Duration::from_secs(seconds))
+        .compat()
         .await
         .expect("Error in tokio timer");
 }
@@ -74,8 +77,13 @@ fn append_log(includes_timestamp: IncludesTimestamp, message: impl Into<Vec<u8>>
 
 #[inline]
 pub fn spawn() {
-    tokio::run_async(async {
-        tokio::spawn_async(log_requests());
-        tokio::spawn_async(log_ws_clients());
-    });
+    tokio::run(
+        async {
+            tokio::spawn(log_requests().unit_error().boxed().compat());
+            tokio::spawn(log_ws_clients().unit_error().boxed().compat());
+        }
+            .unit_error()
+            .boxed()
+            .compat(),
+    );
 }

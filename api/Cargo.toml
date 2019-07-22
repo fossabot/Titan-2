@@ -12,39 +12,39 @@ default = ["telemetry"]
 telemetry = ["chrono", "tokio", "rocket_telemetry"]
 
 [dependencies]
-chrono = { version = "0.4.6", optional = true }
+chrono = { version = "0.4.7", optional = true }
 clap = "2.33.0"
-derive_more = "0.14.0"
-diesel = { version = "1.4.1", features = ["serde_json"] }
-dotenv = "0.13.0"
-dotenv_codegen = "0.11.0"
+derive_more = "0.15.0"
+diesel = { version = "1.4.2", features = ["serde_json"] }
+dotenv = "0.14.1"
+dotenv_codegen = "0.14.1"
 enceladus_macros = { path = "../macros" }
-futures-preview = { version = "0.3.0-alpha.15", features = ["io-compat"] }
-hashbrown = "0.1.8"
+futures-preview = { version = "0.3.0-alpha.17", features = ["io-compat"] }
+hashbrown = "0.5.0"
 itertools = "0.8.0"
 jsonwebtoken = "5.0.1"
-lazy_static = "1.2.0"
-lru-cache = "0.1.1"
-openssl = "0.10.18"
-parking_lot = { version = "0.7.1", features = ["nightly", "deadlock_detection"] }
+lazy_static = "1.3.0"
+lru-cache = "0.1.2"
+openssl = "0.10.24"
+parking_lot = { version = "0.9.0", features = ["nightly"] }
 reddit = { path = "../reddit" }
-reqwest = "0.9.9"
-rocket = "0.4.0"
-rocket_cors = "0.4.0"
+reqwest = "0.9.19"
+rocket = "0.4.2"
+rocket_cors = "0.5.0"
 rocket_telemetry = { path = "../rocket_telemetry", optional = true }
-serde = { version = "1.0.87", features = ["derive"] }
-serde_json = "1.0.38"
-tokio = { version = "0.1.18", features = ["async-await-preview"], optional = true }
-uuid = { version = "0.7.2", features = ["v4"] }
+serde = { version = "1.0.97", features = ["derive"] }
+serde_json = "1.0.40"
+tokio = { version = "0.1.22", optional = true }
+uuid = { version = "0.7.4", features = ["v4"] }
 ws = { git = 'https://github.com/jhpratt/ws-rs' }
 
 [dependencies.rocket_contrib]
 default-features = false
 features = ["diesel_postgres_pool", "json", "helmet"]
-version = "0.4.0"
+version = "0.4.2"
 
 [dev-dependencies]
-rand = "0.6.5"
+rand = "0.7.0"
 
 [build-dependencies]
-openssl = "0.10.19"
+openssl = "0.10.24"

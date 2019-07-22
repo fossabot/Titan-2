@@ -1,3 +1,4 @@
+use crate::WS_HOST;
 use hashbrown::{HashMap, HashSet};
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
@@ -19,12 +20,6 @@ lazy_static! {
 }
 
 pub static CONNECTED_CLIENTS: AtomicUsize = AtomicUsize::new(0);
-
-#[cfg(debug_assertions)]
-const IP: &str = "127.0.0.1";
-#[cfg(not(debug_assertions))]
-const IP: &str = "0.0.0.0";
-const PORT: u16 = 3001;
 
 #[derive(Debug)]
 struct Socket {
@@ -88,8 +83,7 @@ impl Handler for Socket {
 
 #[inline]
 pub fn spawn() {
-    let addr = format!("{}:{}", IP, PORT);
-    ws::listen(addr, |out| Socket {
+    ws::listen(WS_HOST.to_string(), |out| Socket {
         out:   Arc::new(out),
         rooms: HashSet::new(),
     })
