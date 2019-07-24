@@ -27,7 +27,6 @@ pub struct FeatureFilter;
 
 impl Fairing for FeatureFilter {
     /// Give Rocket some information about the fairing, including when to call it.
-    #[inline]
     fn info(&self) -> Info {
         Info {
             name: "Feature filter",
@@ -39,7 +38,6 @@ impl Fairing for FeatureFilter {
     /// call `filter_array` and `filter_object` as necessary to remove any unwanted fields.
     ///
     /// FIXME Is there any valid use case for an "all" feature flag?
-    #[inline]
     fn on_response(&self, request: &Request<'_>, response: &mut Response<'_>) {
         let features: String = request
             .get_query_value("features")
@@ -47,43 +45,36 @@ impl Fairing for FeatureFilter {
             .unwrap();
         let features: &HashSet<String> = &features.split(',').map(str::to_lowercase).collect();
 
-        let mut body: Json = match response.body_string() {
-            Some(body_string) => match serde_json::from_str(&body_string) {
-                Ok(body) => body,
-                Err(_) => {
-                    // Not a JSON body, so there's no fields to remove.
-                    return response.set_sized_body(Cursor::new(body_string));
-                }
-            },
-            None => {
-                // Error converting the body to a String;
-                // there aren't any fields to remove.
-                return;
-            }
-        };
-
-        if body.is_array() {
-            filter_array(body.as_array_mut().unwrap(), features);
-        } else if body.is_object() {
-            filter_object(body.as_object_mut().unwrap(), features);
+        if let Some(body_string) = response.body_string() {
+            if let Ok(mut body) = serde_json::from_str(&body_string) {
+                designator(&mut body, features);
+                response.set_sized_body(Cursor::new(body.to_string()));
+            } else {
+                response.set_sized_body(Cursor::new(body_string));
+            };
+        } else {
+            // Error converting the body to a String;
+            // there aren't any fields to remove.
         }
+    }
+}
 
-        response.set_sized_body(Cursor::new(body.to_string()));
+/// Call `filter_object` and `filter_array` as appropriate.
+fn designator(value: &mut Json, features: &HashSet<String>) {
+    if value.is_object() {
+        filter_object(value.as_object_mut().unwrap(), features);
+    } else if value.is_array() {
+        filter_array(value.as_array_mut().unwrap(), features);
     }
 }
 
 /// Recursively filter the fields of an object in-place.
-#[inline]
 fn filter_object(object: &mut Map<String, Json>, features: &HashSet<String>) {
     for (key, _) in object.clone().iter() {
         let value = &mut object[key];
 
         // Recursively reach each value.
-        if value.is_object() {
-            filter_object(value.as_object_mut().unwrap(), features);
-        } else if value.is_array() {
-            filter_array(value.as_array_mut().unwrap(), features)
-        }
+        designator(value, features);
 
         // This field requires a feature that wasn't requested.
         if key.contains("__")
@@ -95,15 +86,8 @@ fn filter_object(object: &mut Map<String, Json>, features: &HashSet<String>) {
 }
 
 /// Recursively filter the fields of any child objects of an array in-place.
-#[inline]
 fn filter_array(array: &mut Vec<Json>, features: &HashSet<String>) {
-    for (i, _) in array.clone().iter().enumerate() {
-        let val = &mut array[i];
-
-        if val.is_object() {
-            filter_object(val.as_object_mut().unwrap(), features);
-        } else if val.is_array() {
-            filter_array(val.as_array_mut().unwrap(), features);
-        }
+    for value in array {
+        designator(value, features);
     }
 }

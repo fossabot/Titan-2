@@ -7,7 +7,6 @@ lazy_static! {
 }
 
 /// Encrypt a string using a global key, returning the bitvec.
-#[inline]
 pub fn encrypt(payload: &str) -> Vec<u8> {
     let mut buffer = vec![0; KEY.size() as usize];
 
@@ -18,7 +17,6 @@ pub fn encrypt(payload: &str) -> Vec<u8> {
 }
 
 /// Given a bitarray, decrypt it using a global key and return the resulting string.
-#[inline]
 pub fn decrypt(encrypted: &[u8]) -> String {
     let mut decrypted = vec![0; KEY.size() as usize];
 

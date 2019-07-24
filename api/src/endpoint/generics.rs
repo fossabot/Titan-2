@@ -4,7 +4,6 @@
 #[macro_export]
 macro_rules! generic_all {
     ($x:ident) => {
-        #[inline]
         #[rocket::get("/")]
         pub fn all(
             conn: crate::DataDB,
@@ -20,7 +19,6 @@ macro_rules! generic_all {
 #[macro_export]
 macro_rules! generic_get {
     ($x:ident) => {
-        #[inline]
         #[rocket::get("/<id>")]
         pub fn get(
             conn: crate::DataDB,

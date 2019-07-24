@@ -1,7 +1,6 @@
 use super::{append_log, IncludesTimestamp};
 
-#[inline]
-pub fn log_sent_message(message_length: usize, clients: usize, microseconds: u128) {
+pub fn log(message_length: usize, clients: usize, microseconds: u128) {
     append_log(
         IncludesTimestamp(false),
         format!(

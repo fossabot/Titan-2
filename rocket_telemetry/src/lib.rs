@@ -16,25 +16,22 @@ use rocket::{
     Response,
 };
 use std::io::Cursor;
-use lazy_static::lazy_static;
 
 pub type RequestLog = Vec<RequestLogEntry>;
 pub static REQUESTS: RwLock<RequestLog> = RwLock::new(Vec::new());
 
-#[derive(Default, Debug)]
+#[derive(Debug, Default)]
 pub struct Telemetry {}
 
 impl Telemetry {
     /// Reset the telemetry to a fresh state,
     /// returning the existing logs.
-    #[inline(always)]
     pub fn reset() -> RequestLog {
         std::mem::replace(&mut REQUESTS.write(), vec![])
     }
 }
 
 impl Fairing for Telemetry {
-    #[inline]
     fn info(&self) -> Info {
         Info {
             name: "Telemetry",
@@ -42,12 +39,10 @@ impl Fairing for Telemetry {
         }
     }
 
-    #[inline]
     fn on_request(&self, request: &mut Request<'_>, _: &Data) {
         request.local_cache(RequestTimer::begin);
     }
 
-    #[inline]
     fn on_response(&self, request: &Request<'_>, response: &mut Response<'_>) {
         let start_time = request
             .local_cache(RequestTimer::end)

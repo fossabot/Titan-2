@@ -1,7 +1,7 @@
 #![feature(async_await, custom_attribute, decl_macro, proc_macro_hygiene)]
 #![deny(rust_2018_idioms, clippy::all)]
 #![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
-#![allow(intra_doc_link_resolution_failure, clippy::match_bool)]
+#![allow(intra_doc_link_resolution_failure)]
 
 #[macro_use]
 extern crate diesel;
@@ -15,28 +15,25 @@ mod endpoint;
 mod fairing;
 mod rocket_conditional_attach;
 mod schema;
-#[cfg(feature = "telemetry")]
 mod telemetry;
-mod websocket;
-
 #[cfg(test)]
 mod tests;
+mod websocket;
 
 use dotenv::dotenv;
-use endpoint::*;
-use fairing::*;
+use endpoint::{event, meta, oauth, section, thread, user};
+use fairing::FeatureFilter;
 use lazy_static::lazy_static;
 use rocket::{
     config::{Config, Environment},
     routes,
     Rocket,
 };
-use rocket_conditional_attach::*;
+use rocket_conditional_attach::ConditionalAttach;
 use rocket_contrib::{database, helmet::SpaceHelmet};
 use rocket_cors::CorsOptions;
-#[cfg(feature = "telemetry")]
 use rocket_telemetry::Telemetry;
-use std::net::SocketAddr;
+use std::{error::Error, net::SocketAddr};
 
 /// Single point to change if we need to alter the DBMS.
 pub type Database = diesel::PgConnection;
@@ -45,7 +42,6 @@ pub struct DataDB(Database);
 
 /// Returns a globally unique identifier.
 /// Specifically, v4, which is not based on any input factors.
-#[inline]
 pub fn guid() -> String {
     uuid::Uuid::new_v4().to_string()
 }
@@ -63,10 +59,12 @@ lazy_static! {
                     .help("Host IP & port for HTTP requests")
                     .long("rest-host")
                     .value_name("IP_ADDR:PORT")
-                    .default_value(match cfg!(debug_assertions) {
-                        true => "127.0.0.1:3000",
-                        false => "0.0.0.0:80",
-                    })
+                    .default_value(
+                        #[cfg(debug_assertions)]
+                        "127.0.0.1:3000",
+                        #[cfg(not(debug_assertions))]
+                        "0.0.0.0:80",
+                    )
                     .empty_values(false),
             )
             .arg(
@@ -74,32 +72,42 @@ lazy_static! {
                     .help("Host IP & port for WebSocket connections")
                     .long("ws-host")
                     .value_name("IP_ADDR:PORT")
-                    .default_value(match cfg!(debug_assertions) {
-                        true => "127.0.0.1:3001",
-                        false => "0.0.0.0:81",
-                    })
+                    .default_value(
+                        #[cfg(debug_assertions)]
+                        "127.0.0.1:3001",
+                        #[cfg(not(debug_assertions))]
+                        "0.0.0.0:81",
+                    )
                     .empty_values(false),
+            )
+            .arg(
+                Arg::with_name("telemetry")
+                    .help("Enables telemetry")
+                    .short("t")
+                    .long("telemetry"),
             )
             .get_matches()
     };
     static ref REST_HOST: SocketAddr =
-        clap::value_t!(CLARGS.value_of("rest_host"), SocketAddr).unwrap_or_else(|e| e.exit());
+        clap::value_t!(CLARGS.value_of("REST host"), SocketAddr).unwrap_or_else(|e| e.exit());
     static ref WS_HOST: SocketAddr =
-        clap::value_t!(CLARGS.value_of("ws_host"), SocketAddr).unwrap_or_else(|e| e.exit());
+        clap::value_t!(CLARGS.value_of("WebSocket host"), SocketAddr).unwrap_or_else(|e| e.exit());
+    static ref TELEMETRY: bool = CLARGS.is_present("telemetry");
 }
 
 /// Creates a server,
 /// attaching middleware for security and database access.
 /// Routes are then mounted (some conditionally).
-#[inline]
 pub fn server() -> Rocket {
-    dotenv().ok();
+    let _ = dotenv();
 
     rocket::custom(
-        Config::build(match cfg!(debug_assertions) {
-            true => Environment::Development,
-            false => Environment::Production,
-        })
+        Config::build(
+            #[cfg(debug_assertions)]
+            Environment::Development,
+            #[cfg(not(debug_assertions))]
+            Environment::Production,
+        )
         .address(REST_HOST.ip().to_string())
         .port(REST_HOST.port())
         .unwrap(),
@@ -108,7 +116,7 @@ pub fn server() -> Rocket {
     .attach(CorsOptions::default().to_cors().unwrap())
     .attach(DataDB::fairing())
     .attach(FeatureFilter::default())
-    .attach_if(cfg!(feature = "telemetry"), Telemetry::default())
+    .attach_if(*TELEMETRY, Telemetry::default())
     .manage(CorsOptions::default().to_cors().unwrap())
     .mount("/", rocket_cors::catch_all_options_routes())
     .mount("/meta", routes![meta::meta])
@@ -157,23 +165,20 @@ pub fn server() -> Rocket {
 }
 
 /// Launch the server.
-/// Uses the port number defined in the environment variable `ROCKET_PORT`.
-/// If not defined, defaults to `8000`.
-fn main() {
-    std::thread::Builder::new()
-        .name("websocket_server".into())
-        .spawn(|| {
-            websocket::spawn();
-        })
-        .unwrap();
+fn main() -> Result<(), Box<dyn Error>> {
+    use std::thread;
 
-    #[cfg(feature = "telemetry")]
-    std::thread::Builder::new()
-        .name("telemetry".into())
-        .spawn(|| {
-            telemetry::spawn();
-        })
-        .unwrap();
+    thread::Builder::new()
+        .name("websocket_server".into())
+        .spawn(websocket::spawn)?;
+
+    if *TELEMETRY {
+        thread::Builder::new()
+            .name("telemetry".into())
+            .spawn(telemetry::spawn)?;
+    }
 
     server().launch();
+
+    Ok(())
 }

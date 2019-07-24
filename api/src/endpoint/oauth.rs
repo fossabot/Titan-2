@@ -18,7 +18,7 @@ use rocket::{
 };
 #[cfg(test)]
 use std::time::{Duration, SystemTime};
-use std::{error::Error, time::UNIX_EPOCH};
+use std::{convert::TryFrom, error::Error, time::UNIX_EPOCH};
 
 lazy_static! {
     pub static ref REDDIT: Reddit<'static> = Reddit::builder()
@@ -47,7 +47,6 @@ lazy_static! {
 ///
 /// In testing, this endpoint immediately forwards to `callback()`
 /// in order to avoid any user input or external requests.
-#[inline]
 #[get("/?<callback>")]
 pub fn oauth(
     conn: DataDB,
@@ -113,7 +112,6 @@ pub fn oauth(
 /// Until that time,
 /// these fields must be managed manually,
 /// typically by contacting the database operator.
-#[inline]
 #[cfg_attr(test, allow(unused_variables))]
 #[get("/callback?<code>&<state>")]
 pub fn callback(
@@ -151,17 +149,20 @@ pub fn callback(
         &InsertUser {
             reddit_username: username.to_owned(),
             lang: lang.to_owned(),
-            refresh_token: encrypt(reddit_user.refresh_token().as_ref()),
+            refresh_token: encrypt(reddit_user.refresh_token()),
             is_global_admin: false,
             spacex__is_host: false,
             spacex__is_mod: false,
             spacex__is_slack_member: false,
-            access_token: encrypt(reddit_user.access_token().as_ref()),
-            access_token_expires_at_utc: reddit_user
-                .expires_at()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs() as i64,
+            access_token: encrypt(reddit_user.access_token()),
+            access_token_expires_at_utc: i64::try_from(
+                reddit_user
+                    .expires_at()
+                    .duration_since(UNIX_EPOCH)
+                    .unwrap()
+                    .as_secs(),
+            )
+            .expect("conversion failed"),
         },
     )?;
 

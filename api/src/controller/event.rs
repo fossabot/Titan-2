@@ -1,5 +1,9 @@
 use super::{Thread, ToMarkdown, UpdateThread, EVENT_CACHE_SIZE};
-use crate::{schema::event, websocket::*, Database};
+use crate::{
+    schema::event,
+    websocket::{Action, DataType, Message, Room, Update},
+    Database,
+};
 use enceladus_macros::generate_structs;
 use lazy_static::lazy_static;
 use lru_cache::LruCache;
@@ -37,19 +41,16 @@ impl Event {
     ///
     /// Does _not_ use cache (reading or writing),
     /// so as to avoid storing values rarely accessed.
-    #[inline]
     pub fn find_all(conn: &Database) -> QueryResult<Vec<Self>> {
-        use crate::schema::event::dsl::*;
-
+        use crate::schema::event::dsl::event;
         event.load(conn)
     }
 
     /// Find a given `Event` by its ID.
     ///
     /// Internally uses a cache to limit database accesses.
-    #[inline]
     pub fn find_id(conn: &Database, event_id: i32) -> QueryResult<Self> {
-        use crate::schema::event::dsl::*;
+        use crate::schema::event::dsl::event;
 
         let mut cache = CACHE.lock();
         if cache.contains_key(&event_id) {
@@ -64,9 +65,8 @@ impl Event {
     /// Create an `Event` given the data.
     ///
     /// The inserted row is added to the global cache and returned.
-    #[inline]
     pub fn create(conn: &Database, data: &InsertEvent) -> QueryResult<Self> {
-        use crate::schema::event::dsl::*;
+        use crate::schema::event::dsl::event;
 
         let result: Self = diesel::insert_into(event).values(data).get_result(conn)?;
         CACHE.lock().insert(result.id, result.clone());
@@ -87,7 +87,7 @@ impl Event {
             data.in_thread_id,
             &UpdateThread {
                 events_id: thread.events_id.into(),
-                ..Default::default()
+                ..UpdateThread::default()
             },
         )?;
 
@@ -97,9 +97,8 @@ impl Event {
     /// Update an `Event` given an ID and the data to update.
     ///
     /// The entry is updated in the database, added to cache, and returned.
-    #[inline]
     pub fn update(conn: &Database, event_id: i32, data: &UpdateEvent) -> QueryResult<Self> {
-        use crate::schema::event::dsl::*;
+        use crate::schema::event::dsl::{event, id};
 
         let result: Self = diesel::update(event)
             .filter(id.eq(event_id))
@@ -121,18 +120,17 @@ impl Event {
     /// Delete an `Event` given its ID.
     ///
     /// Removes the entry from cache and returns the number of rows deleted (should be `1`).
-    #[inline]
     pub fn delete(conn: &Database, event_id: i32) -> QueryResult<usize> {
-        use crate::schema::event::dsl::*;
+        use crate::schema::event::dsl::{event, id};
 
-        let mut thread = Thread::find_id(conn, Event::find_id(conn, event_id)?.in_thread_id)?;
+        let mut thread = Thread::find_id(conn, Self::find_id(conn, event_id)?.in_thread_id)?;
         thread.events_id.retain(|&cur_id| cur_id != event_id);
         Thread::update(
             conn,
             thread.id,
             &UpdateThread {
                 events_id: thread.events_id.into(),
-                ..Default::default()
+                ..UpdateThread::default()
             },
         )?;
 
@@ -145,7 +143,14 @@ impl Event {
         .send();
 
         CACHE.lock().remove(&event_id);
-        diesel::delete(event).filter(id.eq(event_id)).execute(conn)
+
+        let removed_count = diesel::delete(event).filter(id.eq(event_id)).execute(conn);
+
+        if let Ok(removed_count) = removed_count {
+            debug_assert_eq!(removed_count, 1);
+        }
+
+        removed_count
     }
 }
 
@@ -155,7 +160,6 @@ impl ToMarkdown for Event {
     /// but should be valid for any markdown flavor supporting tables.
     ///
     /// The designated UTC column (if any) will be formatted as `HH:MM`.
-    #[inline]
     fn to_markdown(&self, conn: &Database) -> Result<String, Box<dyn Error>> {
         if !self.posted {
             return Ok("".into());
@@ -175,18 +179,18 @@ impl ToMarkdown for Event {
                 "|{}",
                 // If the column in question is the designated UTC timestamp,
                 // format it as such.
-                if Some(i) == utc_col_index {
+                if utc_col_index == Some(i) {
                     let timestamp = val.as_i64().expect("expected i64 in UTC column");
                     let hours = timestamp % 86_400 / 3_600;
                     let minutes = timestamp % 3_600 / 60;
 
                     format!("{:02}:{:02}", hours, minutes)
                 } else {
-                    use serde_json::Value::*;
+                    use serde_json::Value::{Number, String};
                     match val {
-                        Number(ref n) => n.clone().as_i64().unwrap().to_string(),
-                        String(ref s) => s.clone().to_owned(),
-                        _ => panic!("Expected number or string"),
+                        Number(n) => n.clone().as_i64().unwrap().to_string(),
+                        String(s) => s.clone().to_owned(),
+                        _ => panic!("expected number or string"),
                     }
                 }
                 .replace('\n', " ")

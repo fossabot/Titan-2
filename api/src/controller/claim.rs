@@ -25,9 +25,8 @@ pub struct Claim {
 impl Claim {
     /// Create a new `Claim` object with the provided `user_id`.
     /// The `iat` field is automatically generated.
-    #[inline]
-    pub fn new(user_id: i32) -> Claim {
-        Claim {
+    pub fn new(user_id: i32) -> Self {
+        Self {
             user_id,
             iat: SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -37,18 +36,14 @@ impl Claim {
     }
 
     /// Convert the existing `struct` into a valid JWT.
-    #[inline]
     pub fn encode(&self) -> Result<String, jsonwebtoken::errors::Error> {
         jwt::encode(&HEADER, self, &ROCKET_SECRET_KEY)
     }
 
     /// Obtain the `user_id` field of a JWT passed as a parameter.
-    #[inline]
     pub fn get_user_id(token: &str) -> Result<i32, jsonwebtoken::errors::Error> {
-        Ok(
-            jwt::decode::<Claim>(token, &ROCKET_SECRET_KEY, &VALIDATION)?
-                .claims
-                .user_id,
-        )
+        Ok(jwt::decode::<Self>(token, &ROCKET_SECRET_KEY, &VALIDATION)?
+            .claims
+            .user_id)
     }
 }

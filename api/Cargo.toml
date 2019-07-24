@@ -7,12 +7,8 @@ authors = ["Jacob Pratt <the.z.cuber@gmail.com>"]
 edition = "2018"
 publish = false
 
-[features]
-default = ["telemetry"]
-telemetry = ["chrono", "tokio", "rocket_telemetry"]
-
 [dependencies]
-chrono = { version = "0.4.7", optional = true }
+chrono = "0.4.7"
 clap = "2.33.0"
 derive_more = "0.15.0"
 diesel = { version = "1.4.2", features = ["serde_json"] }
@@ -31,12 +27,13 @@ reddit = { path = "../reddit" }
 reqwest = "0.9.19"
 rocket = "0.4.2"
 rocket_cors = "0.5.0"
-rocket_telemetry = { path = "../rocket_telemetry", optional = true }
+rocket_telemetry = { path = "../rocket_telemetry" }
 serde = { version = "1.0.97", features = ["derive"] }
 serde_json = "1.0.40"
-tokio = { version = "0.1.22", optional = true }
+tokio = "0.1.22"
 uuid = { version = "0.7.4", features = ["v4"] }
 ws = { git = 'https://github.com/jhpratt/ws-rs' }
+derive_deref = "1.1.0"
 
 [dependencies.rocket_contrib]
 default-features = false

@@ -4,8 +4,8 @@ use super::{Claim, Thread, USER_CACHE_SIZE};
 use crate::{
     encryption::{decrypt, encrypt},
     endpoint::oauth::REDDIT,
-    schema::user::{self, dsl::*},
-    websocket::*,
+    schema::user,
+    websocket::{Action, DataType, Message, Room, Update},
     DataDB,
     Database,
 };
@@ -19,7 +19,10 @@ use rocket::{
     Outcome,
 };
 use rocket_contrib::databases::diesel::{ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl};
-use std::time::{Duration, UNIX_EPOCH};
+use std::{
+    convert::TryFrom,
+    time::{Duration, UNIX_EPOCH},
+};
 #[cfg(debug_assertions)]
 use {rocket_contrib::json::Json, serde::Deserialize, serde_json::json};
 
@@ -53,8 +56,6 @@ generate_structs! {
     }
 }
 
-// TODO make these macros!
-
 /// This struct is necessary to perform the requisite encryption
 /// of the refresh and access tokens.
 /// It is otherwise identical to `UpdateUser`.
@@ -79,16 +80,15 @@ impl Into<UpdateUser> for Json<ExternalUpdateUser> {
     ///
     /// The sole purpose of this conversion is to encrypt the
     /// refresh and access tokens where necessary.
-    #[inline]
     fn into(self) -> UpdateUser {
         UpdateUser {
             lang: self.lang.clone(),
-            refresh_token: self.refresh_token.clone().map(|s| encrypt(&s)),
+            refresh_token: self.refresh_token.as_ref().map(|s| encrypt(s)),
             is_global_admin: self.is_global_admin,
             spacex__is_host: self.spacex__is_host,
             spacex__is_mod: self.spacex__is_mod,
             spacex__is_slack_member: self.spacex__is_slack_member,
-            access_token: self.access_token.clone().map(|s| encrypt(&s)),
+            access_token: self.access_token.as_ref().map(|s| encrypt(s)),
             access_token_expires_at_utc: self.access_token_expires_at_utc,
         }
     }
@@ -96,14 +96,12 @@ impl Into<UpdateUser> for Json<ExternalUpdateUser> {
 
 /// Helper function for serde to have a default value when deserializing.
 #[cfg(debug_assertions)]
-#[inline(always)]
 fn en() -> String {
     "en".into()
 }
 
 /// Helper function for serde to have a default value when deserializing.
 #[cfg(debug_assertions)]
-#[inline(always)]
 const fn falsey() -> bool {
     false
 }
@@ -138,7 +136,6 @@ impl Into<InsertUser> for Json<ExternalInsertUser> {
     ///
     /// The sole purpose of this conversion is to encrypt the
     /// refresh and access tokens where necessary.
-    #[inline]
     fn into(self) -> InsertUser {
         InsertUser {
             reddit_username: self.reddit_username.clone(),
@@ -158,10 +155,11 @@ impl User {
     /// Check if the user is a moderator of a given subreddit.
     ///
     /// If the subreddit is not known, returns `false`.
-    #[inline]
     pub fn is_moderator_of(&self, subreddit: Option<&str>) -> bool {
-        match subreddit {
-            Some("spacex") => self.spacex__is_mod,
+        let subreddit = subreddit.unwrap_or_default().to_lowercase();
+
+        match subreddit.as_ref() {
+            "spacex" => self.spacex__is_mod,
             _ => false,
         }
     }
@@ -169,10 +167,11 @@ impl User {
     /// Check if the user is a host of a given subreddit.
     ///
     /// If the subreddit is not known, returns `false`.
-    #[inline]
     pub fn is_host_for(&self, subreddit: Option<&str>) -> bool {
-        match subreddit {
-            Some("spacex") => self.spacex__is_host,
+        let subreddit = subreddit.unwrap_or_default().to_lowercase();
+
+        match subreddit.as_ref() {
+            "spacex" => self.spacex__is_host,
             _ => false,
         }
     }
@@ -189,7 +188,6 @@ impl User {
     /// - Global admin
     ///
     /// This function verifies that a user is, at a minimum, the thread author.
-    #[inline]
     pub fn can_modify_thread(&self, conn: &DataDB, thread_id: i32) -> bool {
         // Global admins can change anything.
         if self.is_global_admin {
@@ -225,7 +223,6 @@ impl User {
     /// check if their token should be expired (given the previously calculated timestamp).
     /// If it is, let's request a new one from Reddit and store that
     /// (along with its new expiration time) in the database.
-    #[inline]
     pub fn update_access_token_if_necessary(
         conn: &Database,
         user_id: i32,
@@ -233,13 +230,18 @@ impl User {
     ) -> QueryResult<Self> {
         let db_user = Self::find_id(conn, user_id)?;
         let current_expires_at = db_user.access_token_expires_at_utc;
-        let new_expires_at = reddit_user
-            .expires_at()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs() as i64;
+        let new_expires_at = i64::try_from(
+            reddit_user
+                .expires_at()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        )
+        .expect("conversion failed");
 
-        if current_expires_at != new_expires_at {
+        if current_expires_at == new_expires_at {
+            Ok(db_user)
+        } else {
             Self::update(
                 conn,
                 user_id,
@@ -249,8 +251,6 @@ impl User {
                     ..UpdateUser::default()
                 },
             )
-        } else {
-            Ok(db_user)
         }
     }
 
@@ -258,16 +258,17 @@ impl User {
     ///
     /// Does _not_ use cache (reading or writing),
     /// so as to avoid storing values rarely accessed.
-    #[inline]
     pub fn find_all(conn: &Database) -> QueryResult<Vec<Self>> {
+        use crate::schema::user::dsl::user;
         user.load(conn)
     }
 
     /// Find a specific `User` given its ID.
     ///
     /// Internally uses a cache to limit database accesses.
-    #[inline]
     pub fn find_id(conn: &Database, user_id: i32) -> QueryResult<Self> {
+        use crate::schema::user::dsl::user;
+
         let mut cache = CACHE.lock();
         if cache.contains_key(&user_id) {
             Ok(cache.get_mut(&user_id).unwrap().clone())
@@ -281,8 +282,9 @@ impl User {
     /// Create a `User` given the data.
     ///
     /// The inserted row is added to the global cache and returned.
-    #[inline]
     pub fn create(conn: &Database, data: &InsertUser) -> QueryResult<Self> {
+        use crate::schema::user::dsl::user;
+
         let result: Self = diesel::insert_into(user).values(data).get_result(conn)?;
         CACHE.lock().insert(result.id, result.clone());
 
@@ -300,8 +302,9 @@ impl User {
     /// Update a `User` given an ID and the data to update.
     ///
     /// The entry is updated in the database, added to cache, and returned.
-    #[inline]
     pub fn update(conn: &Database, user_id: i32, data: &UpdateUser) -> QueryResult<Self> {
+        use crate::schema::user::dsl::{id, user};
+
         let result: Self = diesel::update(user)
             .filter(id.eq(user_id))
             .set(data)
@@ -323,8 +326,9 @@ impl User {
     ///
     /// Removes the entry from cache and returns the number of rows deleted (should be `1`).
     #[cfg(debug_assertions)]
-    #[inline]
     pub fn delete(conn: &Database, user_id: i32) -> QueryResult<usize> {
+        use crate::schema::user::dsl::{id, user};
+
         CACHE.lock().remove(&user_id);
 
         let _ = Message {
@@ -335,7 +339,13 @@ impl User {
         }
         .send();
 
-        diesel::delete(user).filter(id.eq(user_id)).execute(conn)
+        let removed_count = diesel::delete(user).filter(id.eq(user_id)).execute(conn);
+
+        if let Ok(removed_count) = removed_count {
+            debug_assert_eq!(removed_count, 1);
+        }
+
+        removed_count
     }
 }
 
@@ -345,7 +355,6 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
     /// Create a request guard requiring a user to be authorized with a previously issued JWT.
     /// If the user is not found or the `Authorization` header is malformed/incorrect,
     /// don't allow the client to continue to the rest of the request.
-    #[inline]
     fn from_request(request: &'a Request<'r>) -> request::Outcome<Self, Self::Error> {
         let header = request.headers().get_one("Authorization");
         if header.is_none() {
@@ -386,13 +395,17 @@ impl<'a, 'r> FromRequest<'a, 'r> for User {
 impl<'a> Into<reddit::User<'a>> for User {
     /// Create a `reddit::User` from a `User`.
     /// Automatically decrypts the refresh and access tokens.
-    #[inline]
     fn into(self) -> reddit::User<'a> {
         reddit::User::builder()
             .reddit_instance(&REDDIT)
-            .refresh_token(decrypt(&*self.refresh_token))
-            .access_token(decrypt(&*self.access_token))
-            .expires_at(UNIX_EPOCH + Duration::from_secs(self.access_token_expires_at_utc as u64))
+            .refresh_token(decrypt(self.refresh_token.as_ref()))
+            .access_token(decrypt(self.access_token.as_ref()))
+            .expires_at(
+                UNIX_EPOCH
+                    + Duration::from_secs(
+                        u64::try_from(self.access_token_expires_at_utc).expect("conversion failed"),
+                    ),
+            )
             .build()
             .unwrap()
     }

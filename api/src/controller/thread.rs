@@ -2,8 +2,8 @@
 
 use super::{Event, Section, ToMarkdown, User, THREAD_CACHE_SIZE};
 use crate::{
-    schema::thread::{self, dsl::*},
-    websocket::*,
+    schema::thread,
+    websocket::{Action, DataType, Message, Room, Update},
     Database,
 };
 use enceladus_macros::generate_structs;
@@ -70,8 +70,8 @@ impl Thread {
     ///
     /// Does _not_ use cache (reading or writing),
     /// so as to avoid storing values rarely accessed.
-    #[inline]
     pub fn find_all(conn: &Database) -> QueryResult<Vec<Self>> {
+        use crate::schema::thread::dsl::thread;
         thread.load(conn)
     }
 
@@ -83,12 +83,11 @@ impl Thread {
     /// so as to take advantage of cache wherever possible.
     /// Additionally, directly querying the database would make it more difficult
     /// to preserve the tree structure of the result.
-    #[inline]
     pub fn find_id_with_foreign_keys(conn: &Database, thread_id: i32) -> QueryResult<Json> {
         // Get the values, represented as normal structs.
         // For sections, we also add the relation to `User`,
         // so we represent those as raw, untyped JSON values.
-        let raw_thread = Thread::find_id(conn, thread_id)?;
+        let raw_thread = Self::find_id(conn, thread_id)?;
         let created_by_user = User::find_id(conn, raw_thread.created_by_user_id)?;
         let sections: Vec<_> = raw_thread
             .sections_id
@@ -121,7 +120,6 @@ impl Thread {
     /// Update a `Thread` on Reddit.
     ///
     /// This method will return `Ok(())` if the thread is not posted on Reddit.
-    #[inline]
     pub fn update_on_reddit(&self, conn: &Database) -> QueryResult<()> {
         if self.post_id.is_none() {
             return Ok(());
@@ -144,8 +142,9 @@ impl Thread {
     /// Find a given `Thread` by its ID.
     ///
     /// Internally uses a cache to limit database accesses.
-    #[inline]
     pub fn find_id(conn: &Database, thread_id: i32) -> QueryResult<Self> {
+        use crate::schema::thread::dsl::thread;
+
         let mut cache = CACHE.lock();
         if cache.contains_key(&thread_id) {
             Ok(cache.get_mut(&thread_id).unwrap().clone())
@@ -159,13 +158,14 @@ impl Thread {
     /// Create a `Thread` given the data.
     ///
     /// The inserted row is added to the global cache and returned.
-    #[inline]
     pub fn create(
         conn: &Database,
         data: &ExternalInsertThread,
         user_id: i32,
         reddit_post_id: Option<String>,
     ) -> QueryResult<Self> {
+        use crate::schema::thread::dsl::thread;
+
         let insertable_thread = InsertThread {
             thread_name: data.thread_name.clone(),
             display_name: data.display_name.clone(),
@@ -201,8 +201,9 @@ impl Thread {
     /// Update a `Thread` given an ID and the data to update.
     ///
     /// The entry is updated in the database, added to cache, and returned.
-    #[inline]
     pub fn update(conn: &Database, thread_id: i32, data: &UpdateThread) -> QueryResult<Self> {
+        use crate::schema::thread::dsl::{id, thread};
+
         let result: Self = diesel::update(thread)
             .filter(id.eq(thread_id))
             .set(data)
@@ -223,8 +224,9 @@ impl Thread {
     /// Delete a `Thread` given its ID.
     ///
     /// Removes the entry from cache and returns the number of rows deleted (should be `1`).
-    #[inline]
     pub fn delete(conn: &Database, thread_id: i32) -> QueryResult<usize> {
+        use crate::schema::thread::dsl::{id, thread};
+
         CACHE.lock().remove(&thread_id);
 
         let _ = Message {
@@ -235,9 +237,15 @@ impl Thread {
         }
         .send();
 
-        diesel::delete(thread)
+        let removed_count = diesel::delete(thread)
             .filter(id.eq(thread_id))
-            .execute(conn)
+            .execute(conn);
+
+        if let Ok(removed_count) = removed_count {
+            debug_assert_eq!(removed_count, 1);
+        }
+
+        removed_count
     }
 }
 
@@ -245,11 +253,10 @@ impl ToMarkdown for Thread {
     /// Convert the `Thread` object to valid markdown.
     /// The resulting string is intended for consumption by Reddit,
     /// but should be valid for any markdown flavor supporting tables.
-    #[inline]
     fn to_markdown(&self, conn: &Database) -> Result<String, Box<dyn Error>> {
         let mut md = String::new();
 
-        for &section_id in self.sections_id.iter() {
+        for &section_id in &self.sections_id {
             writeln!(
                 &mut md,
                 "{}\n",

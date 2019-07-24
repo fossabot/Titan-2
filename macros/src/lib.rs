@@ -1,11 +1,7 @@
 #![feature(proc_macro_hygiene, decl_macro, crate_visibility_modifier)]
 #![deny(rust_2018_idioms, clippy::all)]
 #![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
-#![allow(
-    intra_doc_link_resolution_failure,
-    clippy::match_bool,
-    clippy::eval_order_dependence
-)]
+#![allow(intra_doc_link_resolution_failure)]
 
 extern crate proc_macro;
 
@@ -23,7 +19,6 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_macro_input,
     punctuated::Punctuated,
-    token,
     Expr,
     Ident,
     Result,
@@ -45,24 +40,29 @@ use syn::{
 /// ```
 struct Declaration {
     name:       Ident,
-    _paren:     token::Paren,
     table_name: Expr,
-    _brace:     token::Brace,
     fields:     Punctuated<Field, Token![,]>,
 }
 
 impl Parse for Declaration {
     /// Parse a full declaration of a `struct` & its associated fields.
     fn parse(input: ParseStream<'_>) -> Result<Self> {
-        let paren_content;
-        let brace_content;
+        let name = input.parse()?;
 
-        Ok(Declaration {
-            name:       input.parse()?,
-            _paren:     parenthesized!(paren_content in input),
-            table_name: paren_content.parse()?,
-            _brace:     braced!(brace_content in input),
-            fields:     brace_content.parse_terminated(Field::parse)?,
+        let paren_content;
+        parenthesized!(paren_content in input);
+
+        let table_name = paren_content.parse()?;
+
+        let brace_content;
+        braced!(brace_content in input);
+
+        let fields = brace_content.parse_terminated(Field::parse)?;
+
+        Ok(Self {
+            name,
+            table_name,
+            fields,
         })
     }
 }
@@ -71,7 +71,6 @@ impl Parse for Declaration {
 struct Field {
     attribute: Option<Keyword>,
     name:      Ident,
-    _colon:    Token![:],
     typ:       Type,
     default:   Option<Expr>,
 }
@@ -79,33 +78,37 @@ struct Field {
 impl Parse for Field {
     /// Parse a field, likely within a full `Declaration`.
     fn parse(input: ParseStream<'_>) -> Result<Self> {
-        Ok(Field {
-            attribute: if input.peek(kw::auto)
-                || input.peek(kw::readonly)
-                || input.peek(kw::private)
-            {
+        let attribute =
+            if input.peek(kw::auto) || input.peek(kw::readonly) || input.peek(kw::private) {
                 Some(input.parse()?)
             } else {
                 None
-            },
-            name:      input.parse()?,
-            _colon:    input.parse()?,
-            typ:       input.parse()?,
-            default:   if input.peek(Token![=]) {
-                // throw away the `=` token
-                input.parse::<Token![=]>()?;
-                Some(input.parse()?)
-            } else {
-                None
-            },
+            };
+
+        let name = input.parse()?;
+        input.parse::<Token![:]>()?;
+        let typ = input.parse()?;
+
+        let default = if input.peek(Token![=]) {
+            input.parse::<Token![=]>()?;
+            Some(input.parse()?)
+        } else {
+            None
+        };
+
+        Ok(Self {
+            attribute,
+            name,
+            typ,
+            default,
         })
     }
 }
 
 /// Generate the regular, insert, and update `struct`s from the AST.
 /// Additionally, for all fields that have a default value,
-/// create a function (that is always inlined) with a random name
-/// to satisfy serde's constraint on a default needing to be a function (so not literals).
+/// create a function with a random name to satisfy serde's constraint
+/// on a default needing to be a function (so not literals).
 /// The names are randomly generated (and not based on any sort of hash),
 /// preventing any external observers from relying on them in any manner.
 #[proc_macro]
@@ -159,17 +162,19 @@ pub fn generate_structs(item: TokenStream) -> TokenStream {
 
         // Add the field to the general struct,
         // skipping serialization if private.
-        general_fields.push(match serializable {
-            true => quote!(pub #name: #typ),
-            false => quote!(#[serde(skip_serializing)] pub #name: #typ),
+        general_fields.push(if serializable {
+            quote!(pub #name: #typ)
+        } else {
+            quote!(#[serde(skip_serializing)] pub #name: #typ)
         });
 
         // Add the field to the insertables,
         // with an optional default.
         if insertable {
-            insert_fields.push(match default {
-                Some(_) => quote!(#[serde(default = #fn_name)] pub #name: #typ),
-                None => quote!(pub #name: #typ),
+            insert_fields.push(if default.is_some() {
+                quote!(#[serde(default = #fn_name)] pub #name: #typ)
+            } else {
+                quote!(pub #name: #typ)
             });
         }
 
@@ -181,11 +186,8 @@ pub fn generate_structs(item: TokenStream) -> TokenStream {
         }
 
         // Create the function containing our default value.
-        // These are always inlined,
-        // as default literals should have minimal cost.
         if let Some(default) = default {
             generated_fns.push(quote! {
-                #[inline(always)]
                 fn #fn_name_ident() -> #typ {
                     #default.into()
                 }

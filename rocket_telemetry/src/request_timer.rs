@@ -1,26 +1,15 @@
-use std::{ops::Deref, time::SystemTime};
+use derive_deref::Deref;
+use std::time::SystemTime;
 
-#[repr(transparent)]
-#[derive(Debug)]
+#[derive(Debug, Deref)]
 pub struct RequestTimer(Option<SystemTime>);
 
 impl RequestTimer {
-    #[inline(always)]
     pub fn begin() -> Self {
         Self(Some(SystemTime::now()))
     }
 
-    #[inline(always)]
     pub const fn end() -> Self {
         Self(None)
-    }
-}
-
-impl Deref for RequestTimer {
-    type Target = Option<SystemTime>;
-
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        &self.0
     }
 }

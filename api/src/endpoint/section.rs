@@ -13,7 +13,10 @@ use crate::{
 };
 use rocket::{delete, http::Status, patch, post, response::status::Created};
 use rocket_contrib::json::Json;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    convert::TryFrom,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 /// How long are section locks able to be held for, guaranteed?
 ///
@@ -25,7 +28,6 @@ generic_all!(Section);
 generic_get!(Section);
 
 /// Create a `Section`.
-#[inline]
 #[post("/", data = "<data>")]
 pub fn post(
     conn: DataDB,
@@ -60,7 +62,6 @@ pub enum UpdateSectionDiscriminant {
 
 /// Discriminate between the two types,
 /// calling the appropriate method as necessary.
-#[inline]
 #[patch("/<id>", data = "<data>")]
 pub fn patch(
     conn: DataDB,
@@ -68,7 +69,8 @@ pub fn patch(
     id: i32,
     data: Json<UpdateSectionDiscriminant>,
 ) -> RocketResult<Json<Section>> {
-    use UpdateSectionDiscriminant::*;
+    use UpdateSectionDiscriminant::{LockSection, UpdateSection};
+
     match data.into_inner() {
         LockSection(data) => set_lock(conn, user, id, data),
         UpdateSection(data) => update_fields(conn, user, id, data),
@@ -77,7 +79,6 @@ pub fn patch(
 
 /// Set the lock on a `Section`,
 /// preventing any other `User`s from updating any fields.
-#[inline]
 fn set_lock(
     conn: DataDB,
     user: User,
@@ -94,10 +95,13 @@ fn set_lock(
         return Err(Status::Unauthorized);
     }
 
-    let current_unix_timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs() as i64;
+    let current_unix_timestamp = i64::try_from(
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs(),
+    )
+    .expect("conversion failed");
 
     // (1) Let the user assign the (currently null) lock to themselves.
     // (2) Let the user revoke their own lock.
@@ -126,7 +130,6 @@ fn set_lock(
 }
 
 /// Update any fields aside from the lock.
-#[inline]
 fn update_fields(
     conn: DataDB,
     user: User,
@@ -153,7 +156,6 @@ fn update_fields(
 }
 
 /// Delete a `Section` and any references to its ID.
-#[inline]
 #[delete("/<id>")]
 pub fn delete(conn: DataDB, user: User, id: i32) -> RocketResult<Status> {
     let section = match Section::find_id(&conn, id) {

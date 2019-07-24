@@ -1,5 +1,4 @@
-#[cfg(feature = "telemetry")]
-use crate::telemetry::log_sent_message;
+use crate::{telemetry::ws_message, TELEMETRY};
 use derive_more::{Constructor, Display};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -26,7 +25,6 @@ pub enum Room {
 impl std::str::FromStr for Room {
     type Err = &'static str;
 
-    #[inline]
     fn from_str(string: &str) -> Result<Self, Self::Err> {
         match string {
             "user" => Ok(Room::User),
@@ -76,7 +74,6 @@ pub struct Message<'a, T: Serialize> {
 }
 
 impl<T: Serialize> Message<'_, T> {
-    #[inline]
     pub fn send(&self) -> ws::Result<()> {
         let rooms = super::ROOMS.read();
         let clients = match rooms.get(&self.room) {
@@ -92,19 +89,17 @@ impl<T: Serialize> Message<'_, T> {
         })
         .to_string();
 
-        #[cfg(feature = "telemetry")]
-        {
+        if *TELEMETRY {
             let send_start = Instant::now();
             for client in clients.iter() {
                 let _ = client.send(message);
             }
             let elapsed = send_start.elapsed().as_micros();
-            log_sent_message(message.len(), clients.len(), elapsed);
-        }
-
-        #[cfg(not(feature = "telemetry"))]
-        for client in clients.iter() {
-            let _ = client.send(message);
+            ws_message::log(message.len(), clients.len(), elapsed);
+        } else {
+            for client in clients.iter() {
+                let _ = client.send(message);
+            }
         }
 
         Ok(())

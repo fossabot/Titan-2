@@ -20,7 +20,6 @@ generic_get!(User);
 
 /// Create a `User`.
 #[cfg(debug_assertions)]
-#[inline]
 #[post("/", data = "<data>")]
 pub fn post(
     conn: DataDB,
@@ -31,7 +30,6 @@ pub fn post(
 
 /// Update a `User`.
 #[cfg(debug_assertions)]
-#[inline]
 #[patch("/<id>", data = "<data>")]
 pub fn patch(conn: DataDB, id: i32, data: Json<ExternalUpdateUser>) -> RocketResult<Json<User>> {
     json_result!(User::update(&conn, id, &data.into()))
@@ -39,7 +37,6 @@ pub fn patch(conn: DataDB, id: i32, data: Json<ExternalUpdateUser>) -> RocketRes
 
 /// Delete a `User`.
 #[cfg(debug_assertions)]
-#[inline]
 #[delete("/<id>")]
 pub fn delete(conn: DataDB, id: i32) -> RocketResult<Status> {
     no_content!(User::delete(&conn, id))
@@ -66,9 +63,8 @@ pub struct TokenUser {
 impl From<User> for TokenUser {
     /// Create a `TokenUser`,
     /// which is a `User` that has an additional `token` field containing a JWT.
-    #[inline]
-    fn from(user: User) -> TokenUser {
-        TokenUser {
+    fn from(user: User) -> Self {
+        Self {
             token: Claim::new(user.id).encode().unwrap(),
             id: user.id,
             reddit_username: user.reddit_username,

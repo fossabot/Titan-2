@@ -5,7 +5,6 @@ pub trait ConditionalAttach {
 }
 
 impl ConditionalAttach for Rocket {
-    #[inline]
     fn attach_if(self, condition: bool, fairing: impl Fairing) -> Self {
         if condition {
             self.attach(fairing)

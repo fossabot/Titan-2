@@ -1,7 +1,7 @@
 use super::{Event, Thread, ToMarkdown, UpdateThread, SECTION_CACHE_SIZE};
 use crate::{
-    schema::section::{self, dsl::*},
-    websocket::*,
+    schema::section,
+    websocket::{Action, DataType, Message, Room, Update},
     Database,
 };
 use enceladus_macros::generate_structs;
@@ -62,16 +62,17 @@ impl Section {
     ///
     /// Does _not_ use cache (reading or writing),
     /// so as to avoid storing values rarely accessed.
-    #[inline]
     pub fn find_all(conn: &Database) -> QueryResult<Vec<Self>> {
+        use crate::schema::section::dsl::section;
         section.load(conn)
     }
 
     /// Find a given `Section` by its ID.
     ///
     /// Internally uses a cache to limit database accesses.
-    #[inline]
     pub fn find_id(conn: &Database, section_id: i32) -> QueryResult<Self> {
+        use crate::schema::section::dsl::section;
+
         let mut cache = CACHE.lock();
         if cache.contains_key(&section_id) {
             Ok(cache.get_mut(&section_id).unwrap().clone())
@@ -85,8 +86,8 @@ impl Section {
     /// Create a `Section` given the data.
     ///
     /// The inserted row is added to the global cache and returned.
-    #[inline]
     pub fn create(conn: &Database, data: &InsertSection) -> QueryResult<Self> {
+        use crate::schema::section::dsl::section;
         let result: Self = diesel::insert_into(section).values(data).get_result(conn)?;
         CACHE.lock().insert(result.id, result.clone());
 
@@ -106,7 +107,7 @@ impl Section {
             data.in_thread_id,
             &UpdateThread {
                 sections_id: thread.sections_id.into(),
-                ..Default::default()
+                ..UpdateThread::default()
             },
         )?;
 
@@ -116,8 +117,8 @@ impl Section {
     /// Update a `Section` given an ID and the data to update.
     ///
     /// The entry is updated in the database, added to cache, and returned.
-    #[inline]
     pub fn update(conn: &Database, section_id: i32, data: &UpdateSection) -> QueryResult<Self> {
+        use crate::schema::section::dsl::{id, section};
         let result: Self = diesel::update(section)
             .filter(id.eq(section_id))
             .set(data)
@@ -139,8 +140,8 @@ impl Section {
     /// Integrity and authority to perform this action is _not_ verified here.
     ///
     /// The entry is updated in the database, added to cache, and returned.
-    #[inline]
     pub fn set_lock(conn: &Database, section_id: i32, data: &LockSection) -> QueryResult<Self> {
+        use crate::schema::section::dsl::{id, section};
         let result: Self = diesel::update(section)
             .filter(id.eq(section_id))
             .set(data)
@@ -161,16 +162,16 @@ impl Section {
     /// Delete a `Section` given its ID.
     ///
     /// Removes the entry from cache and returns the number of rows deleted (should be `1`).
-    #[inline]
     pub fn delete(conn: &Database, section_id: i32) -> QueryResult<usize> {
-        let mut thread = Thread::find_id(conn, Section::find_id(conn, section_id)?.in_thread_id)?;
+        use crate::schema::section::dsl::{id, section};
+        let mut thread = Thread::find_id(conn, Self::find_id(conn, section_id)?.in_thread_id)?;
         thread.sections_id.retain(|&cur_id| cur_id != section_id);
         Thread::update(
             conn,
             thread.id,
             &UpdateThread {
                 sections_id: thread.sections_id.into(),
-                ..Default::default()
+                ..UpdateThread::default()
             },
         )?;
 
@@ -183,9 +184,16 @@ impl Section {
         .send();
 
         CACHE.lock().remove(&section_id);
-        diesel::delete(section)
+
+        let removed_count = diesel::delete(section)
             .filter(id.eq(section_id))
-            .execute(conn)
+            .execute(conn);
+
+        if let Ok(removed_count) = removed_count {
+            debug_assert_eq!(removed_count, 1);
+        }
+
+        removed_count
     }
 }
 
@@ -193,7 +201,6 @@ impl ToMarkdown for Section {
     /// Convert the `Section` object to valid markdown.
     /// The resulting string is intended for consumption by Reddit,
     /// but should be valid for any markdown flavor supporting tables.
-    #[inline]
     fn to_markdown(&self, conn: &Database) -> Result<String, Box<dyn Error>> {
         let mut md = String::new();
 
@@ -211,7 +218,7 @@ impl ToMarkdown for Section {
                     .join("|")
             )?;
 
-            for &event_id in thread.events_id.iter() {
+            for &event_id in &thread.events_id {
                 write!(
                     &mut md,
                     "{}",

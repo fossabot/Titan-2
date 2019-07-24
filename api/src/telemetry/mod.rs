@@ -1,32 +1,20 @@
 mod requests;
 mod ws_clients;
-mod ws_message;
+pub mod ws_message;
 
-pub use self::{requests::*, ws_clients::*, ws_message::*};
 use chrono::prelude::*;
+use derive_deref::Deref;
 use futures::{
     compat::Future01CompatExt,
     future::{FutureExt, TryFutureExt},
 };
 use lazy_static::lazy_static;
 use parking_lot::RwLock;
-use std::{
-    ops::Deref,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 use tokio::{fs::file::File, prelude::*, timer::Delay};
 
-#[repr(transparent)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy, Debug, Deref)]
 struct IncludesTimestamp(bool);
-impl Deref for IncludesTimestamp {
-    type Target = bool;
-
-    #[inline(always)]
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 const LOG_FILE_NAME: &str = "logs.txt";
 
@@ -43,7 +31,6 @@ lazy_static! {
 }
 
 /// Resolve the future after the provided number of seconds.
-#[inline]
 async fn sleep(seconds: u64) {
     Delay::new(Instant::now() + Duration::from_secs(seconds))
         .compat()
@@ -51,7 +38,6 @@ async fn sleep(seconds: u64) {
         .expect("Error in tokio timer");
 }
 
-#[inline]
 fn append_log(includes_timestamp: IncludesTimestamp, message: impl Into<Vec<u8>>) {
     // Prevent reallocating as long as the message isn't terribly long.
     let mut bytes = Vec::with_capacity(512);
@@ -75,15 +61,15 @@ fn append_log(includes_timestamp: IncludesTimestamp, message: impl Into<Vec<u8>>
         .expect("Error writing to file");
 }
 
-#[inline]
 pub fn spawn() {
-    tokio::run(
-        async {
-            tokio::spawn(log_requests().unit_error().boxed().compat());
-            tokio::spawn(log_ws_clients().unit_error().boxed().compat());
-        }
-            .unit_error()
-            .boxed()
-            .compat(),
-    );
+    macro_rules! compat {
+        ($x:expr) => {
+            $x.unit_error().boxed().compat()
+        };
+    }
+
+    tokio::run(compat!(async {
+        tokio::spawn(compat!(requests::log()));
+        tokio::spawn(compat!(ws_clients::log()));
+    }));
 }

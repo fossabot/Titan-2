@@ -2,8 +2,7 @@ use super::{append_log, sleep, IncludesTimestamp};
 use crate::websocket::CONNECTED_CLIENTS;
 use std::sync::atomic::Ordering;
 
-#[inline]
-pub async fn log_ws_clients() {
+pub async fn log() {
     loop {
         sleep(10).await;
 

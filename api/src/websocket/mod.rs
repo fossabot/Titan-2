@@ -9,7 +9,7 @@ use std::sync::{
 use ws::{CloseCode, Handler, Handshake, Message as WsMessage, Sender};
 
 mod structs;
-pub use structs::*;
+pub use structs::{Action, DataType, JoinRequest, Message, Room, Update};
 
 lazy_static! {
     // We're using `Arc` and not `Weak`,
@@ -28,13 +28,11 @@ struct Socket {
 }
 
 impl Handler for Socket {
-    #[inline(always)]
     fn on_open(&mut self, _: Handshake) -> ws::Result<()> {
         CONNECTED_CLIENTS.fetch_add(1, Ordering::Relaxed);
         Ok(())
     }
 
-    #[inline]
     fn on_message(&mut self, message: WsMessage) -> ws::Result<()> {
         let message = match message {
             WsMessage::Text(s) => s,
@@ -63,7 +61,6 @@ impl Handler for Socket {
         Ok(())
     }
 
-    #[inline]
     fn on_close(&mut self, _code: CloseCode, _reason: &str) {
         // Avoid locking the map if we don't need to.
         if !self.rooms.is_empty() {
@@ -81,7 +78,6 @@ impl Handler for Socket {
     }
 }
 
-#[inline]
 pub fn spawn() {
     ws::listen(WS_HOST.to_string(), |out| Socket {
         out:   Arc::new(out),
