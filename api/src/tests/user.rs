@@ -9,9 +9,9 @@ fn create_user(client: &mut Client<'_>) -> Json {
         .post(
             None,
             json!({
-                "reddit_username": guid(),
-                "refresh_token": guid(),
-                "access_token": guid(),
+                "reddit_username": guid!(),
+                "refresh_token": guid!(),
+                "access_token": guid!(),
                 "access_token_expires_at_utc": 0,
             }),
         )
@@ -63,9 +63,9 @@ fn create() {
     let mut client = Client::new();
 
     let user = json!({
-        "reddit_username": guid(),
-        "refresh_token": guid(),
-        "access_token": guid(),
+        "reddit_username": guid!(),
+        "refresh_token": guid!(),
+        "access_token": guid!(),
         "access_token_expires_at_utc": 0,
     });
 

@@ -39,15 +39,16 @@ impl Fairing for FeatureFilter {
     ///
     /// FIXME Is there any valid use case for an "all" feature flag?
     fn on_response(&self, request: &Request<'_>, response: &mut Response<'_>) {
-        let features: String = request
-            .get_query_value("features")
-            .unwrap_or_else(|| Ok("".into()))
-            .unwrap();
-        let features: &HashSet<String> = &features.split(',').map(str::to_lowercase).collect();
-
         if let Some(body_string) = response.body_string() {
             if let Ok(mut body) = serde_json::from_str(&body_string) {
-                designator(&mut body, features);
+                let features_str = request
+                    .get_query_value("features")
+                    .unwrap_or_else(|| Ok("".to_string()))
+                    .unwrap()
+                    .to_lowercase();
+                let features: HashSet<&str> = features_str.split(',').collect();
+
+                designator(&mut body, &features);
                 response.set_sized_body(Cursor::new(body.to_string()));
             } else {
                 response.set_sized_body(Cursor::new(body_string));
@@ -60,7 +61,7 @@ impl Fairing for FeatureFilter {
 }
 
 /// Call `filter_object` and `filter_array` as appropriate.
-fn designator(value: &mut Json, features: &HashSet<String>) {
+fn designator(value: &mut Json, features: &HashSet<&str>) {
     if value.is_object() {
         filter_object(value.as_object_mut().unwrap(), features);
     } else if value.is_array() {
@@ -69,7 +70,7 @@ fn designator(value: &mut Json, features: &HashSet<String>) {
 }
 
 /// Recursively filter the fields of an object in-place.
-fn filter_object(object: &mut Map<String, Json>, features: &HashSet<String>) {
+fn filter_object(object: &mut Map<String, Json>, features: &HashSet<&str>) {
     for (key, _) in object.clone().iter() {
         let value = &mut object[key];
 
@@ -86,7 +87,7 @@ fn filter_object(object: &mut Map<String, Json>, features: &HashSet<String>) {
 }
 
 /// Recursively filter the fields of any child objects of an array in-place.
-fn filter_array(array: &mut Vec<Json>, features: &HashSet<String>) {
+fn filter_array(array: &mut Vec<Json>, features: &HashSet<&str>) {
     for value in array {
         designator(value, features);
     }

@@ -6,7 +6,7 @@ use std::{
 };
 
 #[derive(Debug)]
-pub struct RequestLogEntry {
+pub struct Entry {
     pub method:     Method,
     pub uri:        String,
     pub status:     Status,
@@ -15,7 +15,7 @@ pub struct RequestLogEntry {
     pub start_time: SystemTime,
 }
 
-impl Display for RequestLogEntry {
+impl Display for Entry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

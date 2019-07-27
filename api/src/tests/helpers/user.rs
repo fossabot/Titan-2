@@ -20,9 +20,9 @@ pub fn create(client: &mut Client<'_>) -> (i32, String) {
     create_with_body(
         client,
         json!({
-            "reddit_username": guid(),
-            "refresh_token": guid(),
-            "access_token": guid(),
+            "reddit_username": guid!(),
+            "refresh_token": guid!(),
+            "access_token": guid!(),
             "access_token_expires_at_utc": 0,
         }),
     )

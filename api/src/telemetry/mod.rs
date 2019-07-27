@@ -8,7 +8,7 @@ use futures::{
     compat::Future01CompatExt,
     future::{FutureExt, TryFutureExt},
 };
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use std::time::{Duration, Instant};
 use tokio::{fs::file::File, prelude::*, timer::Delay};
@@ -17,18 +17,17 @@ use tokio::{fs::file::File, prelude::*, timer::Delay};
 struct IncludesTimestamp(bool);
 
 const LOG_FILE_NAME: &str = "logs.txt";
-
-lazy_static! {
-    static ref LOG_FILE: RwLock<File> = RwLock::new(
+static LOG_FILE: Lazy<RwLock<File>> = Lazy::new(|| {
+    RwLock::new(
         std::fs::OpenOptions::new()
             .read(true)
             .append(true)
             .create(true)
             .open(LOG_FILE_NAME)
             .map(File::from_std)
-            .expect("Could not open log file")
-    );
-}
+            .expect("Could not open log file"),
+    )
+});
 
 /// Resolve the future after the provided number of seconds.
 async fn sleep(seconds: u64) {

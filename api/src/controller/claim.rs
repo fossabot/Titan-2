@@ -1,17 +1,16 @@
+use dotenv_codegen::dotenv;
 use jsonwebtoken as jwt;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-lazy_static! {
-    static ref HEADER: jwt::Header = jwt::Header::default();
-    static ref VALIDATION: jwt::Validation = jwt::Validation {
-        validate_iat: true,
-        validate_exp: false,
-        ..jwt::Validation::default()
-    };
-    static ref ROCKET_SECRET_KEY: &'static [u8] = dotenv!("ROCKET_SECRET_KEY").as_bytes();
-}
+static HEADER: Lazy<jwt::Header> = Lazy::new(jwt::Header::default);
+static VALIDATION: Lazy<jwt::Validation> = Lazy::new(|| jwt::Validation {
+    validate_iat: true,
+    validate_exp: false,
+    ..jwt::Validation::default()
+});
+static ROCKET_SECRET_KEY: Lazy<&[u8]> = Lazy::new(|| dotenv!("ROCKET_SECRET_KEY").as_bytes());
 
 /// This represents the body ("claim") of the JWT used for authorization.
 /// The `user_id` matches with the ID of a `User` object in the database,

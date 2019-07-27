@@ -1,23 +1,22 @@
+mod structs;
+
 use crate::WS_HOST;
 use hashbrown::{HashMap, HashSet};
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
+pub use structs::{Action, DataType, JoinRequest, Message, Room, Update};
 use ws::{CloseCode, Handler, Handshake, Message as WsMessage, Sender};
 
-mod structs;
-pub use structs::{Action, DataType, JoinRequest, Message, Room, Update};
-
-lazy_static! {
-    // We're using `Arc` and not `Weak`,
-    // as the latter doesn't implement `Hash`.
-    // As such, we have to manually drop the reference
-    // in the `on_close` method to prevent a memory leak.
-    static ref ROOMS: RwLock<HashMap<Room, HashSet<Arc<Sender>>>> = RwLock::new(HashMap::new());
-}
+// We're using `Arc` and not `Weak`,
+// as the latter doesn't implement `Hash`.
+// As such, we have to manually drop the reference
+// in the `on_close` method to prevent a memory leak.
+static ROOMS: Lazy<RwLock<HashMap<Room, HashSet<Arc<Sender>>>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
 
 pub static CONNECTED_CLIENTS: AtomicUsize = AtomicUsize::new(0);
 

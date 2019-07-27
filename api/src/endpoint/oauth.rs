@@ -5,7 +5,8 @@ use crate::{
     encryption::encrypt,
     DataDB,
 };
-use lazy_static::lazy_static;
+use dotenv_codegen::dotenv;
+use once_cell::sync::Lazy;
 use reddit::Reddit;
 use request::Url;
 use reqwest as request;
@@ -20,8 +21,8 @@ use rocket::{
 use std::time::{Duration, SystemTime};
 use std::{convert::TryFrom, error::Error, time::UNIX_EPOCH};
 
-lazy_static! {
-    pub static ref REDDIT: Reddit<'static> = Reddit::builder()
+pub static REDDIT: Lazy<Reddit<'_>> = Lazy::new(|| {
+    Reddit::builder()
         .redirect_uri(dotenv!("REDDIT_REDIRECT_URI"))
         .user_agent(dotenv!("REDDIT_USER_AGENT"))
         .client_id(dotenv!("REDDIT_CLIENT_ID"))
@@ -39,8 +40,8 @@ lazy_static! {
             ]
         })
         .build()
-        .unwrap();
-}
+        .unwrap()
+});
 
 /// Endpoint that redirects the user to Reddit,
 /// requesting to provided permissions.
@@ -83,7 +84,7 @@ pub fn oauth(
     #[cfg(test)]
     return Ok(Redirect::to(uri!(
         "/oauth",
-        callback: code = guid(),
+        callback: code = guid!(),
         state = &callback
     )));
 
@@ -128,13 +129,13 @@ pub fn callback(
     {
         reddit_user = reddit::User::builder()
             .reddit_instance(&REDDIT)
-            .refresh_token(guid())
-            .access_token(guid())
+            .refresh_token(guid!())
+            .access_token(guid!())
             .expires_at(SystemTime::now() + Duration::from_secs(3600))
             .build()
             .unwrap();
-        lang = guid()[0..2].to_owned();
-        username = guid();
+        lang = guid!()[0..2].to_owned();
+        username = guid!();
     }
     #[cfg(not(test))]
     {

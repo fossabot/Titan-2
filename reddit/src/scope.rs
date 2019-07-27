@@ -3,7 +3,7 @@ use derive_more::Display;
 /// All possible scopes that can be requested from a user when authenticating.
 ///
 /// Descriptions are from Reddit.
-#[derive(Debug, Display)]
+#[derive(Clone, Copy, Debug, Display, Hash, PartialEq, Eq)]
 pub enum Scope {
     /// Update preferences and related account information.
     /// Will not have access to your email or password.

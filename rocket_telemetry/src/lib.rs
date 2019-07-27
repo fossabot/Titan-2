@@ -1,13 +1,12 @@
 #![feature(const_vec_new, duration_float)]
 #![deny(rust_2018_idioms, clippy::all)]
-#![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
+#![warn(clippy::nursery)]
 
 mod request_log;
 mod request_timer;
 
 use parking_lot::RwLock;
-pub use request_log::RequestLogEntry;
-use request_timer::RequestTimer;
+use request_timer::Timer;
 use rocket::{
     fairing::{Fairing, Info, Kind},
     http::{Method, Status},
@@ -15,19 +14,19 @@ use rocket::{
     Request,
     Response,
 };
-use std::io::Cursor;
+use std::{io::Cursor, mem};
 
-pub type RequestLog = Vec<RequestLogEntry>;
-pub static REQUESTS: RwLock<RequestLog> = RwLock::new(Vec::new());
+pub(crate) type RequestLog = Vec<request_log::Entry>;
+pub(crate) static REQUESTS: RwLock<RequestLog> = RwLock::new(Vec::new());
 
 #[derive(Debug, Default)]
-pub struct Telemetry {}
+pub struct Telemetry;
 
 impl Telemetry {
     /// Reset the telemetry to a fresh state,
     /// returning the existing logs.
     pub fn reset() -> RequestLog {
-        std::mem::replace(&mut REQUESTS.write(), vec![])
+        mem::replace(&mut REQUESTS.write(), vec![])
     }
 }
 
@@ -40,12 +39,12 @@ impl Fairing for Telemetry {
     }
 
     fn on_request(&self, request: &mut Request<'_>, _: &Data) {
-        request.local_cache(RequestTimer::begin);
+        request.local_cache(Timer::begin);
     }
 
     fn on_response(&self, request: &Request<'_>, response: &mut Response<'_>) {
         let start_time = request
-            .local_cache(RequestTimer::end)
+            .local_cache(Timer::end)
             .expect("unable to get request start time");
         let duration = start_time.elapsed().expect("error with system time");
 
@@ -64,7 +63,7 @@ impl Fairing for Telemetry {
             None => 0,
         };
 
-        REQUESTS.write().push(RequestLogEntry {
+        REQUESTS.write().push(request_log::Entry {
             method,
             uri: request.uri().path().to_string(),
             status,

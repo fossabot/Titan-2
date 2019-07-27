@@ -4,14 +4,14 @@ use syn::{
 };
 
 /// Define custom keywords that alter which `struct`s the field is emitted on.
-crate mod kw {
+pub(crate) mod kw {
     syn::custom_keyword!(auto);
     syn::custom_keyword!(readonly);
     syn::custom_keyword!(private);
 }
 
 /// Represent the keywords as a type
-crate enum Keyword {
+pub(crate) enum Keyword {
     /// Cannot be inserted or updated
     Auto,
 

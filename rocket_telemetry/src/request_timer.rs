@@ -2,9 +2,9 @@ use derive_deref::Deref;
 use std::time::SystemTime;
 
 #[derive(Debug, Deref)]
-pub struct RequestTimer(Option<SystemTime>);
+pub struct Timer(Option<SystemTime>);
 
-impl RequestTimer {
+impl Timer {
     pub fn begin() -> Self {
         Self(Some(SystemTime::now()))
     }

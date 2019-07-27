@@ -9,8 +9,8 @@ fn create_thread(client: &mut Client<'_>, token: &str) -> Json {
         .post(
             Some(token),
             json!({
-                "thread_name": guid(),
-                "display_name": guid(),
+                "thread_name": guid!(),
+                "display_name": guid!(),
                 "event_column_headers": [],
             }),
         )
@@ -56,10 +56,10 @@ fn create() {
     let (user_id, user_token) = user::create(&mut client);
 
     let thread = json!({
-        "thread_name": guid(),
-        "display_name": guid(),
+        "thread_name": guid!(),
+        "display_name": guid!(),
         "space__t0": rand::random::<i64>(),
-        "video_url": guid(),
+        "video_url": guid!(),
         "event_column_headers": [],
     });
 
@@ -106,8 +106,8 @@ fn create() {
 fn create_no_auth() {
     let mut client = Client::new();
     let thread = json!({
-        "thread_name": guid(),
-        "display_name": guid(),
+        "thread_name": guid!(),
+        "display_name": guid!(),
         "event_column_headers": [],
     });
 
@@ -124,7 +124,7 @@ fn update() {
     assert_eq!(created_value["video_url"].as_str(), None);
 
     // test
-    let data = json!({ "video_url": guid() });
+    let data = json!({ "video_url": guid!() });
     let body = client
         .with_base(BASE)
         .patch(Some(&user_token), &created_value["id"], &data)

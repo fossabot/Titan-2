@@ -1,13 +1,10 @@
 #![feature(async_await, custom_attribute, decl_macro, proc_macro_hygiene)]
 #![deny(rust_2018_idioms, clippy::all)]
-#![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
-#![allow(intra_doc_link_resolution_failure)]
+#![warn(clippy::nursery)]
 
+/// Needed for schema.rs - we can't inline it there, as it's auto-generated.
 #[macro_use]
 extern crate diesel;
-
-#[macro_use]
-extern crate dotenv_codegen;
 
 mod controller;
 mod encryption;
@@ -23,7 +20,7 @@ mod websocket;
 use dotenv::dotenv;
 use endpoint::{event, meta, oauth, section, thread, user};
 use fairing::FeatureFilter;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use rocket::{
     config::{Config, Environment},
     routes,
@@ -36,64 +33,71 @@ use rocket_telemetry::Telemetry;
 use std::{error::Error, net::SocketAddr};
 
 /// Single point to change if we need to alter the DBMS.
+/// Note that there may be database-specific features that also need changing.
 pub type Database = diesel::PgConnection;
 #[database("data")]
 pub struct DataDB(Database);
 
 /// Returns a globally unique identifier.
 /// Specifically, v4, which is not based on any input factors.
-pub fn guid() -> String {
-    uuid::Uuid::new_v4().to_string()
-}
-
-lazy_static! {
-    static ref CLARGS: clap::ArgMatches<'static> = {
-        use clap::{crate_authors, crate_description, crate_version, App, Arg};
-
-        App::new("Enceladus API")
-            .author(crate_authors!("\n"))
-            .version(crate_version!())
-            .about(crate_description!())
-            .arg(
-                Arg::with_name("REST host")
-                    .help("Host IP & port for HTTP requests")
-                    .long("rest-host")
-                    .value_name("IP_ADDR:PORT")
-                    .default_value(
-                        #[cfg(debug_assertions)]
-                        "127.0.0.1:3000",
-                        #[cfg(not(debug_assertions))]
-                        "0.0.0.0:80",
-                    )
-                    .empty_values(false),
-            )
-            .arg(
-                Arg::with_name("WebSocket host")
-                    .help("Host IP & port for WebSocket connections")
-                    .long("ws-host")
-                    .value_name("IP_ADDR:PORT")
-                    .default_value(
-                        #[cfg(debug_assertions)]
-                        "127.0.0.1:3001",
-                        #[cfg(not(debug_assertions))]
-                        "0.0.0.0:81",
-                    )
-                    .empty_values(false),
-            )
-            .arg(
-                Arg::with_name("telemetry")
-                    .help("Enables telemetry")
-                    .short("t")
-                    .long("telemetry"),
-            )
-            .get_matches()
+#[macro_export]
+macro_rules! guid {
+    () => {
+        uuid::Uuid::new_v4().to_string()
     };
-    static ref REST_HOST: SocketAddr =
-        clap::value_t!(CLARGS.value_of("REST host"), SocketAddr).unwrap_or_else(|e| e.exit());
-    static ref WS_HOST: SocketAddr =
-        clap::value_t!(CLARGS.value_of("WebSocket host"), SocketAddr).unwrap_or_else(|e| e.exit());
-    static ref TELEMETRY: bool = CLARGS.is_present("telemetry");
 }
+
+static CLARGS: Lazy<clap::ArgMatches<'_>> = Lazy::new(|| {
+    use clap::{crate_authors, crate_description, crate_version, App, Arg};
+
+    App::new("Enceladus API")
+        .author(crate_authors!("\n"))
+        .version(crate_version!())
+        .about(crate_description!())
+        .arg(
+            Arg::with_name("REST host")
+                .help("Host IP & port for HTTP requests")
+                .short("r")
+                .long("rest-host")
+                .value_name("IP_ADDR:PORT")
+                .default_value(
+                    #[cfg(debug_assertions)]
+                    "127.0.0.1:3000",
+                    #[cfg(not(debug_assertions))]
+                    "0.0.0.0:80",
+                )
+                .empty_values(false),
+        )
+        .arg(
+            Arg::with_name("WebSocket host")
+                .help("Host IP & port for WebSocket connections")
+                .short("w")
+                .long("ws-host")
+                .value_name("IP_ADDR:PORT")
+                .default_value(
+                    #[cfg(debug_assertions)]
+                    "127.0.0.1:3001",
+                    #[cfg(not(debug_assertions))]
+                    "0.0.0.0:81",
+                )
+                .empty_values(false),
+        )
+        .arg(
+            Arg::with_name("telemetry")
+                .help("Enables telemetry")
+                .short("t")
+                .long("telemetry"),
+        )
+        .get_matches()
+});
+
+static REST_HOST: Lazy<SocketAddr> = Lazy::new(|| {
+    clap::value_t!(CLARGS.value_of("REST host"), SocketAddr).unwrap_or_else(|e| e.exit())
+});
+static WS_HOST: Lazy<SocketAddr> = Lazy::new(|| {
+    clap::value_t!(CLARGS.value_of("WebSocket host"), SocketAddr).unwrap_or_else(|e| e.exit())
+});
+static TELEMETRY: Lazy<bool> = Lazy::new(|| CLARGS.is_present("telemetry"));
 
 /// Creates a server,
 /// attaching middleware for security and database access.

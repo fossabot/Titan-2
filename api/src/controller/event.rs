@@ -5,27 +5,26 @@ use crate::{
     Database,
 };
 use enceladus_macros::generate_structs;
-use lazy_static::lazy_static;
 use lru_cache::LruCache;
+use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rocket_contrib::databases::diesel::{ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl};
 use serde_json::json;
 use std::{error::Error, fmt::Write};
 
-lazy_static! {
-    /// A global cache, containing a mapping of IDs to their respective `Event`.
-    ///
-    /// The cache is protected by a `Mutex`,
-    /// ensuring there is only ever at most one writer at a time.
-    /// Note that even when reading,
-    /// there must be a lock on mutability,
-    /// as the `LruCache` must be able to update itself.
-    ///
-    /// To read from the cache,
-    /// you'll want to call `CACHE.lock()` before performing normal operations.
-    /// ```
-    static ref CACHE: Mutex<LruCache<i32, Event>> = Mutex::new(LruCache::new(EVENT_CACHE_SIZE));
-}
+/// A global cache, containing a mapping of IDs to their respective `Event`.
+///
+/// The cache is protected by a `Mutex`,
+/// ensuring there is only ever at most one writer at a time.
+/// Note that even when reading,
+/// there must be a lock on mutability,
+/// as the `LruCache` must be able to update itself.
+///
+/// To read from the cache,
+/// you'll want to call `CACHE.lock()` before performing normal operations.
+/// ```
+static CACHE: Lazy<Mutex<LruCache<i32, Event>>> =
+    Lazy::new(|| Mutex::new(LruCache::new(EVENT_CACHE_SIZE)));
 
 generate_structs! {
     Event("event") {

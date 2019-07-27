@@ -9,7 +9,7 @@ fn create_event(client: &mut Client<'_>, token: &str, thread_id: i32) -> Json {
         .post(
             Some(token),
             json!({
-                "cols": [1_500_000_000, guid(), guid()],
+                "cols": [1_500_000_000, guid!(), guid!()],
                 "in_thread_id": thread_id,
             }),
         )
@@ -58,7 +58,7 @@ fn create() {
     let thread_id = thread::create(&mut client, &user_token);
 
     let event = json!({
-        "cols": [rand::random::<i64>(), guid(), guid()],
+        "cols": [rand::random::<i64>(), guid!(), guid!()],
         "in_thread_id": thread_id,
     });
 
@@ -112,7 +112,7 @@ fn update() {
     assert_eq!(body["posted"], data["posted"]);
 
     // update a specific column
-    let data = json!([[2, guid()]]);
+    let data = json!([[2, guid!()]]);
     let body = client
         .with_base(BASE)
         .patch(Some(&user_token), &created_value["id"], &data)

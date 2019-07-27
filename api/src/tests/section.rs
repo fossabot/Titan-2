@@ -52,8 +52,8 @@ fn create() {
     let thread_id = thread::create(&mut client, &user_token);
 
     let section = json!({
-        "name": guid(),
-        "content": guid(),
+        "name": guid!(),
+        "content": guid!(),
         "in_thread_id": thread_id,
     });
 
@@ -101,7 +101,7 @@ fn update() {
     assert_eq!(created_value["name"].as_str(), Some(""));
 
     // test
-    let data = json!({ "name": guid() });
+    let data = json!({ "name": guid!() });
     let body = client
         .with_base(BASE)
         .patch(Some(&user_token), &created_value["id"], &data)

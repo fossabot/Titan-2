@@ -1,26 +1,17 @@
 #![deny(rust_2018_idioms, clippy::all)]
-#![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
-#![allow(intra_doc_link_resolution_failure)]
+#![warn(clippy::nursery)]
 
 mod scope;
 
 use derive_builder::Builder;
 use itertools::Itertools;
-use lazy_static::lazy_static;
 use reqwest::{header::USER_AGENT, Client, Url, UrlError};
 pub use scope::Scope;
 use serde::Deserialize;
 use std::time::{Duration, SystemTime};
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    static ref CLIENT: Client = Client::builder().gzip(true).build().unwrap();
-}
-
-/// Returns a globally unique identifier.
-/// Specifically, v4, which is not based on any input factors.
-pub fn guid() -> String {
-    uuid::Uuid::new_v4().to_string()
-}
+static CLIENT: Lazy<Client> = Lazy::new(|| Client::builder().gzip(true).build().unwrap());
 
 /// A Reddit configuration.
 /// Used to create `User`s.
@@ -188,27 +179,34 @@ impl<'a> Reddit<'a> {
     }
 }
 
-/// Given the endpoint's path, return the full URL.
-fn endpoint(path: &str) -> String {
-    format!("https://oauth.reddit.com{}", path)
+// Reduce repetition by using a macro.
+macro_rules! request {
+    ($_self:ident, endpoint => $endpoint:expr) => {
+        CLIENT
+            .get(concat!("https://oauth.reddit.com", $endpoint))
+            .header(USER_AGENT, $_self.reddit_instance.user_agent)
+            .bearer_auth($_self.access_token())
+            .send()
+    };
+
+    ($_self:ident, endpoint => $endpoint:expr, $($key:expr => $value:expr),+ $(,)?) => {
+        CLIENT
+            .get(concat!("https://oauth.reddit.com", $endpoint))
+            .header(USER_AGENT, $_self.reddit_instance.user_agent)
+            .bearer_auth($_self.access_token())
+            .form(&[$(($key, $value),)*])
+            .send()
+    };
 }
 
 /// Endpoints
 impl User<'_> {
     fn me(&mut self) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .get(&endpoint("/api/v1/me"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .send()
+        request!(self, endpoint => "/api/v1/me")
     }
 
     fn prefs(&mut self) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .get(&endpoint("/api/v1/me/prefs"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .send()
+        request!(self, endpoint => "/api/v1/me/prefs")
     }
 
     fn submit(
@@ -217,38 +215,31 @@ impl User<'_> {
         title: &str,
         text: Option<&str>,
     ) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .post(&endpoint("/api/submit"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .form(&[
-                ("kind", "self"),
-                ("api_type", "json"),
-                ("extensions", "json"),
-                ("sendreplies", "false"),
-                ("sr", subreddit),
-                ("title", title),
-                ("text", text.unwrap_or_default()),
-            ])
-            .send()
+        request!(
+            self,
+            endpoint => "/api/submit",
+            "kind" => "self",
+            "api_type" => "json",
+            "extensions" => "json",
+            "sendreplies" => "false",
+            "sr" => subreddit,
+            "title" => title,
+            "text" => text.unwrap_or_default(),
+        )
     }
 
     fn edit(&mut self, thing_id: &str, text: &str) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .post(&endpoint("/api/editusertext"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .form(&[("api_type", "json"), ("thing_id", thing_id), ("text", text)])
-            .send()
+        request!(
+            self,
+            endpoint => "/api/editusertext",
+            "api_type" => "json",
+            "thing_id" => thing_id,
+            "text" => text,
+        )
     }
 
     fn approve_internal(&mut self, thing_id: &str) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .post(&endpoint("/api/approve"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .form(&[("id", thing_id)])
-            .send()
+        request!(self, endpoint => "/api/approve", "id" => thing_id)
     }
 
     fn set_sticky_internal(
@@ -256,16 +247,12 @@ impl User<'_> {
         thing_id: &str,
         state: bool,
     ) -> reqwest::Result<reqwest::Response> {
-        CLIENT
-            .post(&endpoint("/api/set_subreddit_sticky"))
-            .header(USER_AGENT, self.reddit_instance.user_agent)
-            .bearer_auth(self.access_token())
-            .form(&[
-                ("api_type", "json"),
-                ("id", thing_id),
-                ("state", &state.to_string()),
-            ])
-            .send()
+        request!(self,
+            endpoint => "/api/set_subreddit_sticky",
+            "api_type" => "json",
+            "id" => thing_id,
+            "state" => &state.to_string(),
+        )
     }
 }
 

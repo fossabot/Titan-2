@@ -1,10 +1,8 @@
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use openssl::rsa::{Padding, Rsa};
 
-lazy_static! {
-    static ref KEY: Rsa<openssl::pkey::Private> =
-        Rsa::private_key_from_pem(include_bytes!("./.db_key")).unwrap();
-}
+static KEY: Lazy<Rsa<openssl::pkey::Private>> =
+    Lazy::new(|| Rsa::private_key_from_pem(include_bytes!("./.db_key")).unwrap());
 
 /// Encrypt a string using a global key, returning the bitvec.
 pub fn encrypt(payload: &str) -> Vec<u8> {

@@ -1,7 +1,5 @@
-#![feature(proc_macro_hygiene, decl_macro, crate_visibility_modifier)]
 #![deny(rust_2018_idioms, clippy::all)]
-#![warn(clippy::nursery)] // Don't deny, as there may be unknown bugs.
-#![allow(intra_doc_link_resolution_failure)]
+#![warn(clippy::nursery)]
 
 extern crate proc_macro;
 
