@@ -23,7 +23,7 @@ use std::{
     convert::TryFrom,
     time::{Duration, UNIX_EPOCH},
 };
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 use {rocket_contrib::json::Json, serde::Deserialize, serde_json::json};
 
 /// A global cache, containing a mapping of IDs to their respective `Event`.
@@ -58,7 +58,7 @@ generate_structs! {
 /// This struct is necessary to perform the requisite encryption
 /// of the refresh and access tokens.
 /// It is otherwise identical to `UpdateUser`.
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalUpdateUser {
@@ -72,7 +72,7 @@ pub struct ExternalUpdateUser {
     pub access_token_expires_at_utc: Option<i64>,
 }
 
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 impl Into<UpdateUser> for Json<ExternalUpdateUser> {
     /// Convert the `Json<ExternalUpdateUser>` from the endpoint
     /// into an `UpdateUser` for consumption by the controller.
@@ -94,13 +94,13 @@ impl Into<UpdateUser> for Json<ExternalUpdateUser> {
 }
 
 /// Helper function for serde to have a default value when deserializing.
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 fn en() -> String {
     "en".into()
 }
 
 /// Helper function for serde to have a default value when deserializing.
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 const fn falsey() -> bool {
     false
 }
@@ -108,7 +108,7 @@ const fn falsey() -> bool {
 /// This struct is necessary to perform the requisite encryption
 /// of the refresh and access tokens.
 /// It is otherwise identical to `InsertUser`.
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ExternalInsertUser {
@@ -128,7 +128,7 @@ pub struct ExternalInsertUser {
     pub access_token_expires_at_utc: i64,
 }
 
-#[cfg(debug_assertions)]
+#[cfg(debug)]
 impl Into<InsertUser> for Json<ExternalInsertUser> {
     /// Convert the `Json<ExternalInsertUser>` from the endpoint
     /// into an `InsertUser` for consumption by the controller.
@@ -324,7 +324,7 @@ impl User {
     /// Delete a `User` given its ID.
     ///
     /// Removes the entry from cache and returns the number of rows deleted (should be `1`).
-    #[cfg(debug_assertions)]
+    #[cfg(debug)]
     pub fn delete(conn: &Database, user_id: i32) -> QueryResult<usize> {
         use crate::schema::user::dsl::{id, user};
 

@@ -61,9 +61,9 @@ static CLARGS: Lazy<clap::ArgMatches<'_>> = Lazy::new(|| {
                 .long("rest-host")
                 .value_name("IP_ADDR:PORT")
                 .default_value(
-                    #[cfg(debug_assertions)]
+                    #[cfg(debug)]
                     "127.0.0.1:3000",
-                    #[cfg(not(debug_assertions))]
+                    #[cfg(release)]
                     "0.0.0.0:80",
                 )
                 .empty_values(false),
@@ -75,9 +75,9 @@ static CLARGS: Lazy<clap::ArgMatches<'_>> = Lazy::new(|| {
                 .long("ws-host")
                 .value_name("IP_ADDR:PORT")
                 .default_value(
-                    #[cfg(debug_assertions)]
+                    #[cfg(debug)]
                     "127.0.0.1:3001",
-                    #[cfg(not(debug_assertions))]
+                    #[cfg(release)]
                     "0.0.0.0:81",
                 )
                 .empty_values(false),
@@ -107,9 +107,9 @@ pub fn server() -> Rocket {
 
     rocket::custom(
         Config::build(
-            #[cfg(debug_assertions)]
+            #[cfg(debug)]
             Environment::Development,
-            #[cfg(not(debug_assertions))]
+            #[cfg(release)]
             Environment::Production,
         )
         .address(REST_HOST.ip().to_string())
@@ -127,9 +127,9 @@ pub fn server() -> Rocket {
     .mount("/oauth", routes![oauth::oauth, oauth::callback])
     .mount(
         "/v1/user",
-        #[cfg(debug_assertions)]
+        #[cfg(debug)]
         routes![user::all, user::get, user::post, user::patch, user::delete],
-        #[cfg(not(debug_assertions))]
+        #[cfg(release)]
         routes![user::all, user::get],
     )
     .mount(
