@@ -1,10 +1,11 @@
-#![feature(const_vec_new, duration_float)]
+#![feature(duration_float)] // https://github.com/rust-lang/rust/pull/62756
 #![deny(rust_2018_idioms, clippy::all)]
 #![warn(clippy::nursery)]
 
 mod request_log;
 mod request_timer;
 
+use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use request_timer::Timer;
 use rocket::{
@@ -17,7 +18,7 @@ use rocket::{
 use std::{io::Cursor, mem};
 
 pub(crate) type RequestLog = Vec<request_log::Entry>;
-pub(crate) static REQUESTS: RwLock<RequestLog> = RwLock::new(Vec::new());
+pub(crate) static REQUESTS: Lazy<RwLock<RequestLog>> = Lazy::new(|| RwLock::new(Vec::new()));
 
 #[derive(Debug, Default)]
 pub struct Telemetry;
