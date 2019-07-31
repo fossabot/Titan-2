@@ -3,7 +3,7 @@ language: rust
 cache: cargo
 
 rust:
-  - nightly-2019-05-04
+  - nightly-2019-07-18
 
 install:
   - rustup component add rustfmt
@@ -24,7 +24,7 @@ deploy:
   provider: pages
   skip-cleanup: true
   github-token: $GITHUB_TOKEN
-  local-dir: docs/book/html
+  local-dir: docs/book
   keep-history: false
   on:
     branch: master

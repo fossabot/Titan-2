@@ -5,5 +5,3 @@ src = "src"
 title = "Enceladus API Documentation"
 
 [output.html]
-
-[output.linkcheck]

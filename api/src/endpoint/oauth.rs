@@ -5,7 +5,6 @@ use crate::{
     encryption::encrypt,
     DataDB,
 };
-use dotenv_codegen::dotenv;
 use once_cell::sync::Lazy;
 use reddit::Reddit;
 use request::Url;
@@ -21,12 +20,29 @@ use rocket::{
 use std::time::{Duration, SystemTime};
 use std::{convert::TryFrom, error::Error, time::UNIX_EPOCH};
 
+macro_rules! lazy_env {
+    ($name:ident) => {
+        static $name: Lazy<String> = Lazy::new(|| {
+            std::env::var(stringify!($name)).expect(concat!(
+                "environment variable ",
+                stringify!($name),
+                " is not set"
+            ))
+        });
+    };
+}
+
+lazy_env!(REDDIT_REDIRECT_URI);
+lazy_env!(REDDIT_USER_AGENT);
+lazy_env!(REDDIT_CLIENT_ID);
+lazy_env!(REDDIT_SECRET);
+
 pub static REDDIT: Lazy<Reddit<'_>> = Lazy::new(|| {
     Reddit::builder()
-        .redirect_uri(dotenv!("REDDIT_REDIRECT_URI"))
-        .user_agent(dotenv!("REDDIT_USER_AGENT"))
-        .client_id(dotenv!("REDDIT_CLIENT_ID"))
-        .secret(dotenv!("REDDIT_SECRET"))
+        .redirect_uri(&REDDIT_REDIRECT_URI)
+        .user_agent(&REDDIT_USER_AGENT)
+        .client_id(&REDDIT_CLIENT_ID)
+        .secret(&REDDIT_SECRET)
         .permanent(true)
         .scopes({
             use reddit::Scope::*;
