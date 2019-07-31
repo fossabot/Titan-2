@@ -1,0 +1,613 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Titan Documentation</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="index.html"><strong aria-hidden="true">1.</strong> Titan</a></li><li><ol class="section"><li><a href="semver.html"><strong aria-hidden="true">1.1.</strong> Semantic versioning</a></li><li><a href="feature-flags.html"><strong aria-hidden="true">1.2.</strong> Feature flags</a></li></ol></li><li><a href="types/index.html"><strong aria-hidden="true">2.</strong> Type definitions</a></li><li><ol class="section"><li><a href="types/rust.html"><strong aria-hidden="true">2.1.</strong> Rust</a></li><li><a href="types/ts.html"><strong aria-hidden="true">2.2.</strong> TypeScript</a></li></ol></li><li><a href="authn/index.html"><strong aria-hidden="true">3.</strong> Authentication</a></li><li><ol class="section"><li><a href="authn/flow.html"><strong aria-hidden="true">3.1.</strong> Authentication Flow</a></li><li><a href="authn/permissions.html"><strong aria-hidden="true">3.2.</strong> Permissions</a></li><li><a href="authn/hierarchy.html"><strong aria-hidden="true">3.3.</strong> Hierarchy</a></li></ol></li><li><a href="endpoints/index.html"><strong aria-hidden="true">4.</strong> Endpoints</a></li><li><ol class="section"><li><a href="endpoints/v1/event.html"><strong aria-hidden="true">4.1.</strong> Event</a></li><li><a href="endpoints/meta.html"><strong aria-hidden="true">4.2.</strong> Meta</a></li><li><a href="endpoints/v1/section.html"><strong aria-hidden="true">4.3.</strong> Section</a></li><li><a href="endpoints/v1/thread.html"><strong aria-hidden="true">4.4.</strong> Thread</a></li><li><a href="endpoints/v1/user.html"><strong aria-hidden="true">4.5.</strong> User</a></li></ol></li><li><a href="websockets.html"><strong aria-hidden="true">5.</strong> WebSockets</a></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Titan Documentation</h1> 
+
+                        <div class="right-buttons">
+                            <a href="print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#titan" id="titan"><h1>Titan</h1></a>
+<a class="header" href="#license" id="license"><h2>License</h2></a>
+<p>Titan, its source code, and this documentation are all released under the <a href="https://www.apache.org/licenses/LICENSE-2.0.html">Apache 2.0 license</a>.
+For a quick overview of what that means, I recommend <a href="https://tldrlegal.com/license/apache-license-2.0-%28apache-2.0%29">TLDRLegal</a>.</p>
+<a class="header" href="#semantic-versioning" id="semantic-versioning"><h1>Semantic versioning</h1></a>
+<p>This API follows <a href="https://semver.org/">semantic versioning</a>.
+As such, all breaking changes will bump the major version.</p>
+<p>To ensure stability among all implementations using the API,
+the most recent release of the prior major version
+will be fully supported for at least one month,
+including updates, bug fixes, and any other open issues.
+There will be at least two months from the breaking change
+until the prior version's functionality is removed.</p>
+<p>In some instances,
+certain behavior may be explicitly declared <em>not guaranteed</em>.
+Users of the API should ensure the existence and/or validity of the behavior in question.
+Changes to this behavior will bump the minor version,
+but <em>not</em> the major,
+due to the fact that it is an implementation detail.
+These changes will receive at least one week notice.</p>
+<p>These time frames may be lowered or removed
+if the cause of the breaking change is the result of a security issue
+or other urgent matter.</p>
+<a class="header" href="#feature-flags" id="feature-flags"><h1>Feature flags</h1></a>
+<p>On some endpoints,
+there can be a significant number of fields.
+In an effort to minimize payloads,
+some of these fields will not be sent by default,
+as they won't be used in most cases.</p>
+<p>But what if you want to get those fields?
+In that case, you'll have to send a &quot;feature flag&quot; along with your request.
+All that amounts to is adding the <code>features</code> query parameter to the request URL,
+with the value being all of the &quot;features&quot; you'd like to receive, comma separated.</p>
+<p>How do we know what feature we need?
+It's actually pretty easy!
+From the type definitions,
+you'll notice that some fields have two consecutive underscores in their name,
+such as <code>space__t0</code>.
+The feature's name is whatever comes before those underscores,
+in this case <code>space</code>.
+So if we wanted to receive the <code>space__t0</code> field in the response body,
+we'd have to add <code>?features=space</code> to the end of your request URL.</p>
+<p>This filtering and flag capability is present on all endpoints,
+and cannot be disabled (nor is there an &quot;all&quot; flag).
+As you should know what fields you are using before making the request,
+it shouldn't be much work to determine what features you'll set with the request.
+It is important to note, however,
+that these flags only affect the <em>response</em>.
+Any request setting the aforementioned <code>space__t0</code> field does <em>not</em> need to add the <code>space</code> feature,
+unless, of course, they would like to receive that field back in the response.
+Likewise, the presence or lack of a feature on a <code>POST</code> request does not affect what fields are inserted;
+all fields are always present,
+even if not sent back in the response body.</p>
+<a class="header" href="#type-definitions" id="type-definitions"><h1>Type definitions</h1></a>
+<p>Type definitions are maintained to minimize
+what is required when using the API,
+and to ensure type safety where possible.</p>
+<p>If you would like to add another language,
+please submit a pull request.
+Please note that I <em>will</em> ping you
+in the event of a schema change
+to request an update of the type definitions.</p>
+<a class="header" href="#rust" id="rust"><h1>Rust</h1></a>
+<!-- maintainer: @jhpratt -->
+<pre><code class="language-rust ignore">struct Event {
+  id: i32,
+  posted: bool,
+  in_thread_id: i32,
+  // The API guarantees the `cols` field is an array containing strings and/or numbers
+  cols: serde_json::Value,
+}
+
+struct Section {
+  id: i32,
+  is_events_section: bool,
+  name: String,
+  content: String,
+  lock_held_by_user_id: Option&lt;i32&gt;,
+  in_thread_id: i32,
+  lock_assigned_at_utc: i64,
+}
+
+struct Thread {
+  id: i32,
+  thread_name: String,
+  display_name: String,
+  post_id: Option&lt;String&gt;,
+  subreddit: Option&lt;String&gt;,
+  space__t0: Option&lt;i64&gt;,
+  video_url: Option&lt;String&gt;,
+  spacex__api_id: Option&lt;String&gt;,
+  created_by_user_id: i32,
+  sections_id: Vec&lt;i32&gt;,
+  events_id: Vec&lt;i32&gt;,
+  event_column_headers: Vec&lt;String&gt;,
+  space__utc_col_index: Option&lt;i16&gt;,
+  is_live: bool,
+}
+
+struct User {
+  id: i32,
+  reddit_username: String,
+  lang: String,
+  is_global_admin: bool,
+  spacex__is_host: bool,
+  spacex__is_mod: bool,
+  spacex__is_slack_member: bool,
+}
+</code></pre>
+<a class="header" href="#typescript" id="typescript"><h1>TypeScript</h1></a>
+<!-- maintainer: @jhpratt -->
+<pre><code class="language-typescript">type Event = {
+  id: number;
+  posted: boolean;
+  in_thread_id: number;
+  cols: (string | number)[];
+};
+
+type Section = {
+  id: number;
+  is_events_section: boolean;
+  name: string;
+  content: string;
+  lock_held_by_user_id: number | null;
+  in_thread_id: number;
+  lock_assigned_at_utc: number;
+};
+
+type Thread = {
+  id: number;
+  thread_name: string;
+  display_name: string;
+  post_id: string | null;
+  subreddit: string | null;
+  space__t0: number | null;
+  video_url: string | null;
+  spacex__api_id: string | null;
+  created_by_user_id: number;
+  sections_id: number[];
+  events_id: number[];
+  event_column_headers: string[];
+  space__utc_col_index: number | null;
+  is_live: boolean;
+};
+
+type User = {
+  id: number;
+  reddit_username: string;
+  lang: string;
+  is_global_admin: boolean;
+  spacex__is_host: boolean;
+  spacex__is_mod: boolean;
+  spacex__is_slack_member: boolean;
+};
+</code></pre>
+<a class="header" href="#authentication" id="authentication"><h1>Authentication</h1></a>
+<p>Authentication via Reddit OAuth is required for certain endpoints.
+Details can be found in their respective subsection.</p>
+<a class="header" href="#authentication-flow" id="authentication-flow"><h1>Authentication flow</h1></a>
+<p>To authenticate a user,
+you should first make a <code>GET</code> request to <code>/oauth</code>,
+providing the mandatory query parameter <code>callback</code>.
+Upon successful authentication,
+the user will be redirected to <code>callback</code>
+with the query parameter <code>token</code>;
+this is the <a href="https://jwt.io/introduction">JSON web token</a> that must be supplied
+when requesting an authenticated endpoint.
+Other query parameters present currently include <code>user_id</code>, <code>username</code>, and <code>lang</code>.</p>
+<p><em>Please note:
+There is no <code>state</code> variable present,
+as there is in a standard OAuth flow.
+This may be added in the future.</em></p>
+<a class="header" href="#permissions" id="permissions"><h1>Permissions</h1></a>
+<p>When passing a user through OAuth,
+they will currently be asked certain permissions.
+How you inform end users about the details below is up to you;
+there's certainly no requirement to do so.</p>
+<p>Users will currently be asked to provide the following permissions:</p>
+<blockquote>
+<p>Update preferences and related account information.
+Will not have access to your email or password.</p>
+</blockquote>
+<p>The API <em>does not</em> update preferences.
+It will only ever <em>read</em> the preferences;
+currently that is limited to the user's preferred language.</p>
+<blockquote>
+<p>Edit and delete my comments and submissions.</p>
+</blockquote>
+<p>This one's pretty self-explanatory.
+We're going to have to be able to
+update (and possible delete) the threads that are created.</p>
+<blockquote>
+<p>Submit links and comments from my account.</p>
+</blockquote>
+<p><strong>This description is inaccurate.</strong>
+The API will <em>also</em> be able to submit self-posts from the account;
+I have previously contacted the Reddit admins regarding this,
+and received a response (albeit months later) from their legal team.
+Apparently that didn't matter,
+as the permissions prompt has not changed.</p>
+<p>As to the permission itself,
+threads must be able to be posted.
+There doesn't <em>currently</em> exist the ability to submit comments from Enceladus,
+but that may be an option in the future.</p>
+<blockquote>
+<p>Approve, remove, mark nsfw, and distinguish content in subreddits I moderate.</p>
+</blockquote>
+<p>This permission will only be used in specific subreddits,
+and only when explicitly requested by the end user.
+It will primarily be used to approve posts be non-approved submitters.
+Without this permission, moderators would have to switch back to Reddit to do so.
+This also allows moderators to sticky threads.</p>
+<blockquote>
+<p>Manage and assign flair in subreddits I moderate.</p>
+</blockquote>
+<p>Similar to the previous one,
+this is primarily to prevent moderators needing to switch back to Reddit.</p>
+<blockquote>
+<p>Access my reddit username and signup date.</p>
+</blockquote>
+<p>I'd like to be able to know who you are!
+Although there's no strict requirement on API implementations,
+the main use for this will likely be to show who created a thread,
+and who currently possesses section locks.</p>
+<blockquote>
+<p>Maintain this access indefinitely (or until manually revoked).</p>
+</blockquote>
+<p>Without requesting permanent access,
+the API would be required to re-authenticate the user every hour.</p>
+<a class="header" href="#hierarchy" id="hierarchy"><h1>Hierarchy</h1></a>
+<p>From lowest to highest,
+authentication levels are as follows.</p>
+<ul>
+<li>
+<p>None</p>
+<p>This is exactly what it sounds like.
+No special care needs to be taken;
+any authentication headers passed are ignored.</p>
+</li>
+<li>
+<p>Signed in</p>
+<p>The user must have gone through the OAuth procedure.
+It does not matter <em>which</em> user is authenticated,
+only that one is.</p>
+</li>
+<li>
+<p>Thread author</p>
+<p>The authenticated user must be the same user that initially created the thread.
+This is generally used when it is necessary
+to ensure a user has the authority to make changes to a given
+entity.</p>
+</li>
+<li>
+<p>Subreddit host</p>
+<p>The authenticated user is designated as a host of the subreddit in question.
+This designation is located in the <code>[SUBREDDIT]__is_host</code> field on each user.
+If the field does not exist,
+the value is assumed to be <code>false</code>.
+These users have the ability to add, edit, and remove sections and events
+in the same manner as the thread's author.</p>
+</li>
+<li>
+<p>Global admin</p>
+<p>The authenticated user is designated as a global admin.
+This designation is indicated by the <code>is_global_admin</code> field on each user.
+These users have the same abilities as local admins,
+but on all subreddits (even those not explicitly listed in the database).</p>
+</li>
+</ul>
+<p>For all authentication levels other than 'none',
+the <a href="https://jwt.io/introduction">JSON web token</a> <em>must</em> be passed to the server for each request.
+Failure to do so will result in a <code>401 UNAUTHORIZED</code> response.
+The proper header is of the format <code>Authorization: Bearer [TOKEN]</code>.</p>
+<a class="header" href="#endpoints" id="endpoints"><h1>Endpoints</h1></a>
+<p>Throughout this section,
+there will be numerous references to certain types,
+such as <code>User</code> and <code>Thread</code>.
+These type definitions are <em>not</em> present on those pages;
+rather, they can be found in the <a href="endpoints/../types/index.html">type definition section</a>.
+If the language you are using is not found,
+you may have to derive the exact type from knowledge of other languages.
+Feel free to contribute by converting type definitions into new languages.</p>
+<p>Unless otherwise specified,
+an endpoint does not require authentication.</p>
+<a class="header" href="#event" id="event"><h1>Event</h1></a>
+<a class="header" href="#get-v1event" id="get-v1event"><h2><code>GET /v1/event</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an array containing all events present on any thread.</p>
+<a class="header" href="#get-v1eventid" id="get-v1eventid"><h2><code>GET /v1/event/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an <code>Event</code> object given their id.
+If the id is not known,
+a <code>404 NOT FOUND</code> status will be returned.</p>
+<a class="header" href="#post-v1event" id="post-v1event"><h2><code>POST /v1/event</code></h2></a>
+<p>This endpoint should return the HTTP status <code>201 CREATED</code>.</p>
+<p>This endpoint returns an object containing the id of the row inserted into the database.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#patch-v1eventid" id="patch-v1eventid"><h2><code>PATCH /v1/event/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an object containing, at a minimum,
+all fields that were updated.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#delete-v1eventid" id="delete-v1eventid"><h2><code>DELETE /v1/event/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>204 NO CONTENT</code>.</p>
+<p>This endpoint does not return any data.</p>
+<a class="header" href="#meta-endpoint" id="meta-endpoint"><h1>Meta endpoint</h1></a>
+<p>The <code>/meta</code> endpoint exists to assist any automation tools you may have.
+This endpoint is <em>not</em> (and will not be) versioned,
+though I do not expect any fields to be removed.
+Additional fields may be added at any time without notice.</p>
+<p>Currently, this endpoint returns the following fields:</p>
+<ul>
+<li>
+<p><code>version</code></p>
+<p>The full version of the current iteration.
+This includes minor and patch releases.</p>
+</li>
+<li>
+<p><code>version_major</code></p>
+<p>The major version of the current iteration.
+You may want to periodically check this value
+to see if you need to update your code for a newer version.</p>
+</li>
+<li>
+<p><code>repository</code></p>
+<p>The URL of the API repository.</p>
+</li>
+</ul>
+<a class="header" href="#section" id="section"><h1>Section</h1></a>
+<a class="header" href="#get-v1section" id="get-v1section"><h2><code>GET /v1/section</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an array containing all sections present on any thread.</p>
+<a class="header" href="#get-v1sectionid" id="get-v1sectionid"><h2><code>GET /v1/section/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an <code>Section</code> object given their id.
+If the id is not known,
+a <code>404 NOT FOUND</code> status will be returned.</p>
+<a class="header" href="#post-v1section" id="post-v1section"><h2><code>POST /v1/section</code></h2></a>
+<p>This endpoint should return the HTTP status <code>201 CREATED</code>.</p>
+<p>This endpoint returns an object containing the id of the row inserted into the database.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#patch-v1sectionid" id="patch-v1sectionid"><h2><code>PATCH /v1/section/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an object containing, at a minimum,
+all fields that were updated.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#delete-v1sectionid" id="delete-v1sectionid"><h2><code>DELETE /v1/section/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>204 NO CONTENT</code>.</p>
+<p>This endpoint does not return any data.</p>
+<a class="header" href="#thread" id="thread"><h1>Thread</h1></a>
+<a class="header" href="#get-v1thread" id="get-v1thread"><h2><code>GET /v1/thread</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an array containing all threads present on any thread.</p>
+<a class="header" href="#get-v1threadid" id="get-v1threadid"><h2><code>GET /v1/thread/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns a <code>Thread</code> object given its id.
+If the id is not known,
+a <code>404 NOT FOUND</code> status will be returned.</p>
+<a class="header" href="#get-v1threadidfull" id="get-v1threadidfull"><h2><code>GET /v1/thread/&lt;id&gt;/full</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns a <code>Thread</code> object given its id,
+along with the sections, events, section locks, and author.
+If the id is not known,
+a <code>404 NOT FOUND</code> status will be returned.</p>
+<a class="header" href="#post-v1thread" id="post-v1thread"><h2><code>POST /v1/thread</code></h2></a>
+<p>This endpoint should return the HTTP status <code>201 CREATED</code>.</p>
+<p>This endpoint returns an object containing the id of the row inserted into the database.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#patch-v1threadid" id="patch-v1threadid"><h2><code>PATCH /v1/thread/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an object containing, at a minimum,
+all fields that were updated.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#patch-v1threadidapprove" id="patch-v1threadidapprove"><h2><code>PATCH /v1/thread/&lt;id&gt;/approve</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns no body object on success.
+It approves the thread on Reddit
+and does not alter the state in Enceladus.</p>
+<a class="header" href="#patch-v1threadidsticky-and-patch-v1threadidunsticky" id="patch-v1threadidsticky-and-patch-v1threadidunsticky"><h2><code>PATCH /v1/thread/&lt;id&gt;/sticky</code> and <code>PATCH /v1/thread/&lt;id&gt;/unsticky</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns no body object on success.
+It stickies or unstickies the thread on Reddit
+and does not alter the state in Enceladus.</p>
+<a class="header" href="#delete-v1threadid" id="delete-v1threadid"><h2><code>DELETE /v1/thread/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>204 NO CONTENT</code>.</p>
+<p>This endpoint does not return any data.</p>
+<a class="header" href="#user" id="user"><h1>User</h1></a>
+<a class="header" href="#get-v1user" id="get-v1user"><h2><code>GET /v1/user</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an array containing all users present on any user.</p>
+<a class="header" href="#get-v1userid" id="get-v1userid"><h2><code>GET /v1/user/&lt;id&gt;</code></h2></a>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an <code>User</code> object given their id.
+If the id is not known,
+a <code>404 NOT FOUND</code> status will be returned.</p>
+<a class="header" href="#post-v1user" id="post-v1user"><h2><code>POST /v1/user</code></h2></a>
+<p><strong>This endpoint is only present during testing.</strong>
+The creation of users should never be manual;
+it should only occur via the OAuth flow.</p>
+<p>This endpoint should return the HTTP status <code>201 CREATED</code>.</p>
+<p>This endpoint returns an object containing the id of the row inserted into the database.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#patch-v1userid" id="patch-v1userid"><h2><code>PATCH /v1/user/&lt;id&gt;</code></h2></a>
+<p><strong>This endpoint is only present during testing.</strong>
+The modification of users should never be manual;
+it should only be done via internal methods.</p>
+<p>This endpoint should return the HTTP status <code>200 OK</code>.</p>
+<p>This endpoint returns an object containing, at a minimum,
+all fields that were updated.
+Additional fields should be considered an implementation detail.</p>
+<a class="header" href="#delete-v1userid" id="delete-v1userid"><h2><code>DELETE /v1/user/&lt;id&gt;</code></h2></a>
+<p><strong>This endpoint is only present during testing.</strong>
+The deletion of users should never be manual;
+it should only be done via internal methods.</p>
+<p>This endpoint should return the HTTP status <code>204 NO CONTENT</code>.</p>
+<p>This endpoint does not return any data.</p>
+<a class="header" href="#websockets" id="websockets"><h1>WebSockets</h1></a>
+<p>TODO</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+        
+        <script type="text/javascript">
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+        
+        
+
+    </body>
+</html>

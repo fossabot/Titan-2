@@ -1,0 +1,260 @@
+<!DOCTYPE HTML>
+<html lang="en" class="sidebar-visible no-js">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Permissions - Titan Documentation</title>
+        <meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff" />
+
+        <link rel="shortcut icon" href="../favicon.png">
+        <link rel="stylesheet" href="../css/variables.css">
+        <link rel="stylesheet" href="../css/general.css">
+        <link rel="stylesheet" href="../css/chrome.css">
+        <link rel="stylesheet" href="../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../FontAwesome/css/font-awesome.css">
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800" rel="stylesheet" type="text/css">
+        <link href="https://fonts.googleapis.com/css?family=Source+Code+Pro:500" rel="stylesheet" type="text/css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../highlight.css">
+        <link rel="stylesheet" href="../tomorrow-night.css">
+        <link rel="stylesheet" href="../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        
+
+        
+    </head>
+    <body class="light">
+        <!-- Provide site root to javascript -->
+        <script type="text/javascript">
+            var path_to_root = "../";
+            var default_theme = "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script type="text/javascript">
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script type="text/javascript">
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { } 
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            document.body.className = theme;
+            document.querySelector('html').className = theme + ' js';
+        </script>
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script type="text/javascript">
+            var html = document.querySelector('html');
+            var sidebar = 'hidden';
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            }
+            html.classList.remove('sidebar-visible');
+            html.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <ol class="chapter"><li><a href="../index.html"><strong aria-hidden="true">1.</strong> Titan</a></li><li><ol class="section"><li><a href="../semver.html"><strong aria-hidden="true">1.1.</strong> Semantic versioning</a></li><li><a href="../feature-flags.html"><strong aria-hidden="true">1.2.</strong> Feature flags</a></li></ol></li><li><a href="../types/index.html"><strong aria-hidden="true">2.</strong> Type definitions</a></li><li><ol class="section"><li><a href="../types/rust.html"><strong aria-hidden="true">2.1.</strong> Rust</a></li><li><a href="../types/ts.html"><strong aria-hidden="true">2.2.</strong> TypeScript</a></li></ol></li><li><a href="../authn/index.html"><strong aria-hidden="true">3.</strong> Authentication</a></li><li><ol class="section"><li><a href="../authn/flow.html"><strong aria-hidden="true">3.1.</strong> Authentication Flow</a></li><li><a href="../authn/permissions.html" class="active"><strong aria-hidden="true">3.2.</strong> Permissions</a></li><li><a href="../authn/hierarchy.html"><strong aria-hidden="true">3.3.</strong> Hierarchy</a></li></ol></li><li><a href="../endpoints/index.html"><strong aria-hidden="true">4.</strong> Endpoints</a></li><li><ol class="section"><li><a href="../endpoints/v1/event.html"><strong aria-hidden="true">4.1.</strong> Event</a></li><li><a href="../endpoints/meta.html"><strong aria-hidden="true">4.2.</strong> Meta</a></li><li><a href="../endpoints/v1/section.html"><strong aria-hidden="true">4.3.</strong> Section</a></li><li><a href="../endpoints/v1/thread.html"><strong aria-hidden="true">4.4.</strong> Thread</a></li><li><a href="../endpoints/v1/user.html"><strong aria-hidden="true">4.5.</strong> User</a></li></ol></li><li><a href="../websockets.html"><strong aria-hidden="true">5.</strong> WebSockets</a></li></ol>
+        </nav>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                
+                <div id="menu-bar" class="menu-bar">
+                    <div id="menu-bar-sticky-container">
+                        <div class="left-buttons">
+                            <button id="sidebar-toggle" class="icon-button" type="button" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                                <i class="fa fa-bars"></i>
+                            </button>
+                            <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                                <i class="fa fa-paint-brush"></i>
+                            </button>
+                            <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                                <li role="none"><button role="menuitem" class="theme" id="light">Light (default)</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                                <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                            </ul>
+                            
+                            <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                                <i class="fa fa-search"></i>
+                            </button>
+                            
+                        </div>
+
+                        <h1 class="menu-title">Titan Documentation</h1> 
+
+                        <div class="right-buttons">
+                            <a href="../print.html" title="Print this book" aria-label="Print this book">
+                                <i id="print-button" class="fa fa-print"></i>
+                            </a>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" name="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+                
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script type="text/javascript">
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <a class="header" href="#permissions" id="permissions"><h1>Permissions</h1></a>
+<p>When passing a user through OAuth,
+they will currently be asked certain permissions.
+How you inform end users about the details below is up to you;
+there's certainly no requirement to do so.</p>
+<p>Users will currently be asked to provide the following permissions:</p>
+<blockquote>
+<p>Update preferences and related account information.
+Will not have access to your email or password.</p>
+</blockquote>
+<p>The API <em>does not</em> update preferences.
+It will only ever <em>read</em> the preferences;
+currently that is limited to the user's preferred language.</p>
+<blockquote>
+<p>Edit and delete my comments and submissions.</p>
+</blockquote>
+<p>This one's pretty self-explanatory.
+We're going to have to be able to
+update (and possible delete) the threads that are created.</p>
+<blockquote>
+<p>Submit links and comments from my account.</p>
+</blockquote>
+<p><strong>This description is inaccurate.</strong>
+The API will <em>also</em> be able to submit self-posts from the account;
+I have previously contacted the Reddit admins regarding this,
+and received a response (albeit months later) from their legal team.
+Apparently that didn't matter,
+as the permissions prompt has not changed.</p>
+<p>As to the permission itself,
+threads must be able to be posted.
+There doesn't <em>currently</em> exist the ability to submit comments from Enceladus,
+but that may be an option in the future.</p>
+<blockquote>
+<p>Approve, remove, mark nsfw, and distinguish content in subreddits I moderate.</p>
+</blockquote>
+<p>This permission will only be used in specific subreddits,
+and only when explicitly requested by the end user.
+It will primarily be used to approve posts be non-approved submitters.
+Without this permission, moderators would have to switch back to Reddit to do so.
+This also allows moderators to sticky threads.</p>
+<blockquote>
+<p>Manage and assign flair in subreddits I moderate.</p>
+</blockquote>
+<p>Similar to the previous one,
+this is primarily to prevent moderators needing to switch back to Reddit.</p>
+<blockquote>
+<p>Access my reddit username and signup date.</p>
+</blockquote>
+<p>I'd like to be able to know who you are!
+Although there's no strict requirement on API implementations,
+the main use for this will likely be to show who created a thread,
+and who currently possesses section locks.</p>
+<blockquote>
+<p>Maintain this access indefinitely (or until manually revoked).</p>
+</blockquote>
+<p>Without requesting permanent access,
+the API would be required to re-authenticate the user every hour.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                        
+                            <a rel="prev" href="../authn/flow.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+                        
+
+                        
+                            <a rel="next" href="../authn/hierarchy.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+                        
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                
+                    <a href="../authn/flow.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                
+
+                
+                    <a href="../authn/hierarchy.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                
+            </nav>
+
+        </div>
+
+        
+
+        
+
+        
+
+        
+        <script src="../elasticlunr.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../mark.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../searcher.js" type="text/javascript" charset="utf-8"></script>
+        
+
+        <script src="../clipboard.min.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../highlight.js" type="text/javascript" charset="utf-8"></script>
+        <script src="../book.js" type="text/javascript" charset="utf-8"></script>
+
+        <!-- Custom JS scripts -->
+        
+
+        
+
+    </body>
+</html>
