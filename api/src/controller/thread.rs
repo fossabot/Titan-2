@@ -6,8 +6,8 @@ use crate::{
     websocket::{Action, DataType, Message, Room, Update},
     Database,
 };
-use enceladus_macros::generate_structs;
 use lru_cache::LruCache;
+use macros::generate_structs;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rocket_contrib::databases::diesel::{ExpressionMethods, QueryDsl, QueryResult, RunQueryDsl};

@@ -1,7 +1,7 @@
 [package]
-name = "enceladus_api"
+name = "titan"
 version = "0.1.0"
-repository = "https://github.com/r-spacex/Enceladus-API-rs"
+repository = "https://github.com/r-spacex/Titan"
 license = "Apache-2.0"
 authors = ["Jacob Pratt <the.z.cuber@gmail.com>"]
 edition = "2018"
@@ -15,7 +15,7 @@ derive_more = "0.15.0"
 diesel = { version = "1.4.2", features = ["serde_json"] }
 dotenv = "0.14.1"
 dotenv_codegen = "0.14.1"
-enceladus_macros = { path = "../macros" }
+macros = { path = "../macros" }
 futures-preview = { version = "0.3.0-alpha.17", features = ["io-compat"] }
 hashbrown = "0.5.0"
 itertools = "0.8.0"

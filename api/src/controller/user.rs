@@ -9,8 +9,8 @@ use crate::{
     DataDB,
     Database,
 };
-use enceladus_macros::generate_structs;
 use lru_cache::LruCache;
+use macros::generate_structs;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use rocket::{

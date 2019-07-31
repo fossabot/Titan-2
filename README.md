@@ -1,9 +1,9 @@
-# Enceladus API
+# Titan
 
-![](https://img.shields.io/travis/com/r-spacex/Enceladus-API-rs/master.svg?style=flat-square)
-![](https://img.shields.io/github/license/r-spacex/Enceladus-API-rs.svg?style=flat-square)
+![status](https://img.shields.io/travis/com/r-spacex/Titan)
+![license](https://img.shields.io/github/license/r-spacex/Titan)
 
-[Documentation](https://r-spacex.github.io/Enceladus-API-rs)
+[Documentation](https://r-spacex.github.io/Titan)
 
 ## Build process
 
@@ -14,28 +14,31 @@ you can find the instructions on how to do so
 [in the Rust book](https://doc.rust-lang.org/1.0.0/book/installing-rust.html).
 
 To clone this repository,
-run `git clone git@github.com:r-spacex/Enceladus-API-rs.git`.
+run `git clone git@github.com:r-spacex/Titan.git`.
 
 Once inside the repository,
 you can build a binary for development with `cargo build`.
 For release (which has optimizations enabled),
 run `cargo build --release`.
-The resulting binaries will be `./target/debug/enceladus-api` and `./target/release/enceladus-api` respectively.
+The resulting binaries will be `./target/debug/titan` and `./target/release/titan` respectively.
 
 Please note that the release build is identical to the debug build,
-with the only difference being in performance.
+with the only differences being in performance
+and some endpoints being disabled in release.
 As such, it is highly recommended to only build with the `--release` flag when necessary.
-On my laptop, the release build takes approximately 7 minutes from scratch.
 
-### Feature flags
+### CLI options
 
-Telemetry logging is fully optional,
-though it is enabled by default.
-To disable it,
-provide the `--no-default-features` flag
-when running `cargo build` or `cargo build --release`.
+Run `./titan --help` to view the CLI options.
 
-## Changes to database
+Currently, you can set the socket for the REST server via `-r` or `--rest-server`,
+followed by an IP _and_ the port.
+Likewise, you can set the socket for the WebSocket server via `-w` or `--ws-server`.
+
+Telemetry logging is opt-in when starting the server.
+To do so, pass `-t` or `--telemetry`.
+
+## Database changes
 
 If you're making a change to the database itself,
 you'll likely want the Diesel CLI installed (`cargo install diesel`).
@@ -61,5 +64,3 @@ Before commiting,
 be sure to run `./precommit`.
 This is the _exact_ script run as a test after you push,
 so doing this will ensure tests pass.
-I highly recommend creating a git hook from this.
-You can do so trivially by running `ln precommit .git/hooks/pre-commit`.

@@ -103,7 +103,7 @@ pub fn server() -> Rocket {
     #[cfg(debug)]
     std::env::set_var("ROCKET_ENV", "development");
     #[cfg(release)]
-    std::env::set_var("ROCKET_ENV", "release");
+    std::env::set_var("ROCKET_ENV", "production");
     std::env::set_var("ROCKET_HOST", REST_HOST.ip().to_string());
     std::env::set_var("ROCKET_PORT", REST_HOST.port().to_string());
 

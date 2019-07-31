@@ -1,5 +1,5 @@
 [package]
-name = "enceladus_macros"
+name = "macros"
 version = "0.1.0"
 authors = ["Jacob Pratt <the.z.cuber@gmail.com>"]
 edition = "2018"

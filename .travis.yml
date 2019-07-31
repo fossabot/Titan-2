@@ -13,7 +13,6 @@ before_script:
   - psql -c 'CREATE DATABASE test_db;' -U postgres
   - test -x $HOME/.cargo/bin/diesel || cargo install diesel_cli --no-default-features --features=postgres
   - test -x $HOME/.cargo/bin/mdbook || cargo install --vers "^0.2" mdbook
-  - test -x $HOME/.cargo/bin/mdbook-linkcheck || cargo install mdbook-linkcheck
   - diesel migration run
 
 script:

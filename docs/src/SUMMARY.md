@@ -1,6 +1,6 @@
 # Summary
 
-- [Enceladus API](./index.md)
+- [Titan](./index.md)
   - [Semantic versioning](./semver.md)
   - [Feature flags](./feature-flags.md)
 - [Type definitions](./types/index.md)
