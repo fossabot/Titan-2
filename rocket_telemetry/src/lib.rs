@@ -1,5 +1,5 @@
 #![feature(duration_float)] // https://github.com/rust-lang/rust/pull/62756
-#![deny(rust_2018_idioms, clippy::all)]
+#![deny(rust_2018_idioms, clippy::all, unsafe_code)]
 #![warn(clippy::nursery)]
 
 mod request_log;

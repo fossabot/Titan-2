@@ -1,4 +1,4 @@
-#![deny(rust_2018_idioms, clippy::all)]
+#![deny(rust_2018_idioms, clippy::all, unsafe_code)]
 #![warn(clippy::nursery)]
 
 extern crate proc_macro;

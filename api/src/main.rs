@@ -1,5 +1,5 @@
 #![feature(async_await, custom_attribute, decl_macro, proc_macro_hygiene)]
-#![deny(rust_2018_idioms, clippy::all)]
+#![deny(rust_2018_idioms, clippy::all, unsafe_code)]
 #![warn(clippy::nursery)]
 
 /// Needed for schema.rs - we can't inline it there, as it's auto-generated.
@@ -10,7 +10,6 @@ mod controller;
 mod encryption;
 mod endpoint;
 mod fairing;
-mod rocket_conditional_attach;
 mod schema;
 mod telemetry;
 #[cfg(test)]
