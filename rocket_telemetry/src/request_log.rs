@@ -35,7 +35,7 @@ impl Display for Entry {
 #[cfg(test)]
 #[test]
 fn formatting() {
-    let entry = RequestLogEntry {
+    let entry = Entry {
         method:     Method::Get,
         uri:        "/example/path".into(),
         status:     Status::Ok,

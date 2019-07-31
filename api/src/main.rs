@@ -20,11 +20,7 @@ use dotenv::dotenv;
 use endpoint::{event, meta, oauth, section, thread, user};
 use fairing::FeatureFilter;
 use once_cell::sync::Lazy;
-use rocket::{
-    config::{Config, Environment},
-    routes,
-    Rocket,
-};
+use rocket::{routes, Rocket};
 use rocket_conditional_attach::ConditionalAttach;
 use rocket_contrib::{database, helmet::SpaceHelmet};
 use rocket_cors::CorsOptions;
@@ -104,67 +100,64 @@ static TELEMETRY: Lazy<bool> = Lazy::new(|| CLARGS.is_present("telemetry"));
 pub fn server() -> Rocket {
     let _ = dotenv();
 
-    rocket::custom(
-        Config::build(
+    #[cfg(debug)]
+    std::env::set_var("ROCKET_ENV", "development");
+    #[cfg(release)]
+    std::env::set_var("ROCKET_ENV", "release");
+    std::env::set_var("ROCKET_HOST", REST_HOST.ip().to_string());
+    std::env::set_var("ROCKET_PORT", REST_HOST.port().to_string());
+
+    rocket::ignite()
+        .attach(SpaceHelmet::default())
+        .attach(CorsOptions::default().to_cors().unwrap())
+        .attach(DataDB::fairing())
+        .attach(FeatureFilter::default())
+        .attach_if(*TELEMETRY, Telemetry::default())
+        .manage(CorsOptions::default().to_cors().unwrap())
+        .mount("/", rocket_cors::catch_all_options_routes())
+        .mount("/meta", routes![meta::meta])
+        .mount("/oauth", routes![oauth::oauth, oauth::callback])
+        .mount(
+            "/v1/user",
             #[cfg(debug)]
-            Environment::Development,
+            routes![user::all, user::get, user::post, user::patch, user::delete],
             #[cfg(release)]
-            Environment::Production,
+            routes![user::all, user::get],
         )
-        .address(REST_HOST.ip().to_string())
-        .port(REST_HOST.port())
-        .unwrap(),
-    )
-    .attach(SpaceHelmet::default())
-    .attach(CorsOptions::default().to_cors().unwrap())
-    .attach(DataDB::fairing())
-    .attach(FeatureFilter::default())
-    .attach_if(*TELEMETRY, Telemetry::default())
-    .manage(CorsOptions::default().to_cors().unwrap())
-    .mount("/", rocket_cors::catch_all_options_routes())
-    .mount("/meta", routes![meta::meta])
-    .mount("/oauth", routes![oauth::oauth, oauth::callback])
-    .mount(
-        "/v1/user",
-        #[cfg(debug)]
-        routes![user::all, user::get, user::post, user::patch, user::delete],
-        #[cfg(release)]
-        routes![user::all, user::get],
-    )
-    .mount(
-        "/v1/thread",
-        routes![
-            thread::all,
-            thread::get,
-            thread::get_full,
-            thread::post,
-            thread::patch,
-            thread::approve,
-            thread::sticky,
-            thread::unsticky,
-            thread::delete,
-        ],
-    )
-    .mount(
-        "/v1/section",
-        routes![
-            section::all,
-            section::get,
-            section::post,
-            section::patch,
-            section::delete,
-        ],
-    )
-    .mount(
-        "/v1/event",
-        routes![
-            event::all,
-            event::get,
-            event::post,
-            event::patch,
-            event::delete,
-        ],
-    )
+        .mount(
+            "/v1/thread",
+            routes![
+                thread::all,
+                thread::get,
+                thread::get_full,
+                thread::post,
+                thread::patch,
+                thread::approve,
+                thread::sticky,
+                thread::unsticky,
+                thread::delete,
+            ],
+        )
+        .mount(
+            "/v1/section",
+            routes![
+                section::all,
+                section::get,
+                section::post,
+                section::patch,
+                section::delete,
+            ],
+        )
+        .mount(
+            "/v1/event",
+            routes![
+                event::all,
+                event::get,
+                event::post,
+                event::patch,
+                event::delete,
+            ],
+        )
 }
 
 /// Launch the server.
