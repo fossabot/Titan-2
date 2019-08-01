@@ -2,6 +2,7 @@
 
 ![status](https://img.shields.io/travis/com/r-spacex/Titan)
 ![license](https://img.shields.io/github/license/r-spacex/Titan)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fr-spacex%2FTitan.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fr-spacex%2FTitan?ref=badge_shield)
 
 [Documentation](https://r-spacex.github.io/Titan)
 
@@ -64,3 +65,7 @@ Before commiting,
 be sure to run `./precommit`.
 This is the _exact_ script run as a test after you push,
 so doing this will ensure tests pass.
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fr-spacex%2FTitan.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fr-spacex%2FTitan?ref=badge_large)
